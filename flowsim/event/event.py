@@ -1,6 +1,18 @@
 #!/usr/bin/python
 
-import random, bisect 
+import random
+
+class Result(object):
+    def __init__(self):
+        self.results=dict()
+
+    def increase_result(self, key):
+        try:
+            self.results[result_key] += 1
+        except KeyError:
+            self.results[result_key] = 1
+
+    #TODO : find a better scheme ... to enable node/edge statistics
 
 
 class Event(object):
@@ -8,11 +20,12 @@ class Event(object):
         self.duration = 0
         self.event_manager = event_manager
         self.event_issuer = event_issuer
+        self.result = Result()
 
     def get_duration(self):
         return self.duration
 
-    def handle_event(self): # To overload in child class
+    def handle_event(self): # To specialize in child class
         pass
 
 class Arrival_Event(Event):
@@ -37,12 +50,14 @@ class End_flow_Event(Event):
 
 
 class Event_manager:
-    def __init__(self, arrival_rate, rand_seed=None):
+    def __init__(self, simulation, arrival_rate, rand_seed=None):
+        self.simulation = simulation
+        self.flow_controller = None
+
         self.event_list=[] # reverse sorted list of event (sort key duration)
         random.seed(rand_seed)
         self.arrival_rate = arrival_rate
 
-    # Should be called by the Simulation_manager
     def handle_next_event(self):
         try:
             event = self.event_list.pop()
@@ -63,6 +78,15 @@ class Event_manager:
 
     def start_event_processing(self):
         self.add_event(Arrival_Event, None, arrival_rate=self.arrival_rate)
+
+    def set_flow_controller(self, flow_controller):
+        self.flow_controller = flow_controller
+
+    def flow_allocation_failure(self, source_node, dest_node):
+        # TODO : take into account nodes/edges statistics
+        self.result.increase_result('allocation_failures')
+
+
 
 if __name__ == '__main__':
     event_manager=Event_manager(0.2)
