@@ -5,4 +5,4 @@ class Flow(object):
         self.edge_list = edge_list
 
     def get_edges(self):
-        return edge_list
+        return self.edge_list
