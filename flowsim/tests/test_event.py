@@ -9,8 +9,13 @@ class Simu(object):
     def __init__(self):
         self.result = Result()
 
-    def end():
+    def end(self):
         return False
+
+class Flow(object):
+
+    def length(self):
+        return 1
 
 
 class Flow_controller(object):
@@ -19,10 +24,10 @@ class Flow_controller(object):
         pass
 
     def allocate_flow(self, node1, node2):
-        return
+        return Flow()
 
     def free_flow(self, flow):
-        return
+        return 
 
 
 class Node(object):
@@ -32,10 +37,10 @@ class Node(object):
 class Topo(object):
 
     def get_random_entry_node(self, numer):
-        return 
+        return Node()
 
     def get_random_exit_node(self, numer):
-        return 
+        return Node()
 
 
 class Test_Event_manager(unittest.TestCase):
@@ -90,9 +95,6 @@ class Test_Event_manager(unittest.TestCase):
 
         type_list=self.create_events(event_manager)
 
-        print 'BIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII'
-        print type_list
-        print event_manager.event_list
         [type_list.index(type(event)) for event in event_manager.event_list]
 
     def test_flow_allocation_failure(self):

@@ -1,14 +1,12 @@
-#!/usr/bin/python
-
-class EdgeAllocationError(Exception):
-    pass
+from flowsim.flowsim_exception import EdgeAllocationError
 
 class Edge(object):
     constants={'LAST_FLOW_AVAILABLE':-1}
-    def __init__(self, max_flows=1):
-        self.max_flows=max_flows
-        self.available_flows=self.max_flows
-        self.passing_flows=[]
+    def __init__(self, capacity=1, name=''):
+        self.max_flows = capacity
+        self.available_flows = self.max_flows
+        self.passing_flows = []
+        self.name = name if name != '' else str(id(self))
 
     def allocate_flow(self, flow):
         ret_value = 0
@@ -30,3 +28,6 @@ class Edge(object):
 
     def get_const_value(self, key):
         return Edge.constants[key]
+
+    def get_name(self):
+        return self.name

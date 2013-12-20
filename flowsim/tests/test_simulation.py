@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import unittest
 from flowsim import Simulation
 
@@ -45,10 +43,10 @@ class Test_Simulation(unittest.TestCase):
         sim.launch_simulation(50)
         
         print sim.event_manager.event_list
-        print sim.result.results# == [25, 12, 12]
 
     def test_launch_simulation2(self):
-        sim = Simulation(0.2, 0.9, 21312)
+        print 'cplxe topo'
+        sim = Simulation(0.5, 0.5, 21312)
         nodes = range(6)
         edges = [(nodes[0], nodes[3]),
                  (nodes[0], nodes[1]),
@@ -61,8 +59,3 @@ class Test_Simulation(unittest.TestCase):
         sim.init_simulation(nodes, edges)
 
         sim.launch_simulation(50)
-        
-        print sim.event_manager.event_list
-        print sim.result.results
-
-

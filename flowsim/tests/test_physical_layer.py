@@ -1,11 +1,14 @@
 #!/usr/bin/pyton
 
 import unittest
-import networkx
+import networkx 
 from flowsim.physical_layer.node import Node
 from flowsim.physical_layer.edge import Edge, EdgeAllocationError
 from flowsim.physical_layer.topology import Topology
+from flowsim.physical_layer.topology import draw_graph
+from flowsim.physical_layer.topology import torus2D
 from flowsim.physical_layer.topology import NoSuchEdge
+from flowsim.physical_layer.topology import DuplicatedNodeError
 
 
 class Flow(object):
@@ -15,9 +18,12 @@ class Flow(object):
 
 class Test_node(unittest.TestCase):
 
+    def setUp(self):
+        Node.counter = 0
+
     def test_init(self):
         nodes = [Node() for i in range(3)] + [Node(6)] + [Node(), Node(-1)]
-        assert map(int, nodes) == [0, 1, 2, 6, 7, 8]
+        assert set(map(int, nodes)) == set([0, 1, 2, 6, 7, 8])
 
 
 class Test_edge(unittest.TestCase):
@@ -180,13 +186,92 @@ class Test_topology(unittest.TestCase):
 
         assert len(topo.edges_unavailable) == 0
 
-    @unittest.skip('Not implemented yet')
     def test_build_topology_from_int(self):
-        assert False
 
-    @unittest.skip('Not implemented yet')
+        topo = Topology()
+        # Node int, edge (int, int)
+        nodes = range(4)
+        edges = [(0,1), (2,1)]
+        topo.build_topology_from_int(nodes, edges)
+        assert set(map(int, topo.nodes())) == set(nodes)
+        assert set([frozenset([node1.get_name(), node2.get_name()]) for node1, node2 in topo.edges()])\
+                == set([frozenset([node1, node2]) for node1, node2 in edges])
+
+        topo = Topology()
+        # Node int, edge (int, int)
+        nodes = [1, 1, 2]
+        edges = [(2,1)]
+        self.assertRaises(DuplicatedNodeError, topo.build_topology_from_int, nodes, edges)
+
+        topo = Topology()
+        # Node (int, type), edge (int, int)
+        nodes = [(0, 'entry'), (1, 'exit'), (2), (3, 'exit'), (4, 'entry')]
+        edges = [(0,1), (2,1)]
+        topo.build_topology_from_int(nodes, edges)
+        assert set(map(int, topo.nodes())) == set(range(5))
+        assert set(map(int, topo.entry_nodes)) == set([0, 4])
+        assert set(map(int, topo.exit_nodes)) == set([1, 3])
+
+
+        topo = Topology()
+        # Node by name {'name'}
+        nodes = [{'name':'n1'}, {'name':'n2'}]
+        edges = [('n1', 'n2')]
+        topo.build_topology_from_int(nodes, edges)
+        assert set(map(lambda x: x.get_name(), topo.nodes())) == set(['n1', 'n2'])
+
+
+        topo = Topology()
+        # Node by name {'name', 'number'}
+        nodes = [{'name':'n1', 'number':2}, {'name':'n2', 'number':3}]
+        edges = [('n1', 'n2')]
+        topo.build_topology_from_int(nodes, edges)
+        assert set(map(lambda x: x.get_name(), topo.nodes())) == set(['n1', 'n2'])
+
+        topo = Topology()
+        # Node by name {'name', 'number'}
+        nodes = [{'name':'n1', 'number':2}, {'name':'n2', 'number':2}]
+        edges = [('n1', 'n2')]
+        topo.build_topology_from_int(nodes, edges)
+        assert set(map(lambda x: x.get_name(), topo.nodes())) == set(['n1', 'n2'])
+
+        topo = Topology()
+        # Edge (node, node, capacity)
+        topo.build_topology_from_int([0, 1], [(0, 1, 2)])
+        nodes = topo.nodes()
+        assert topo[nodes[0]][nodes[1]]['object'].max_flows == 2
+
+        topo = Topology()
+        # Edge (node, node, capacity)
+        topo.build_topology_from_int([0, 1], [(0, 1, 2, 3)])
+        nodes = topo.nodes()
+        assert topo[nodes[0]][nodes[1]]['object'].max_flows == 2 
+        assert topo[nodes[0]][nodes[1]]['weight'] == 3
+
+        topo = Topology()
+        # Node by name {'name', 'number'}
+        nodes = [{'name':'n1', 'number':2}, {'name':'n2', 'number':2}]
+        edges = [{'nodes':('n1', 'n2')}]
+        topo.build_topology_from_int(nodes, edges)
+        assert set(map(lambda x: x.get_name(), topo.edges()[0])) == set(['n1', 'n2'])
+
     def test_import_topology(self):
-        assert False
+        filename = './graph0_yed.graphml'
+        imported_graph = networkx.read_graphml(filename)
+        topo = Topology()
+        topo.import_topology(filename)
+        assert set(map(lambda x: x.get_name(), topo.nodes())) == set(imported_graph.nodes())
+        assert set([frozenset([node1.get_name(), node2.get_name()]) for node1, node2 in topo.edges()])\
+                == set([frozenset([node1, node2]) for node1, node2 in imported_graph.edges()])
+        
+    @unittest.skip('Pauses tests')
+    def test_draw_graph(self):
+        topo = Topology()
+        nodes = range(4)
+        edges = [(0,1), (2,1)]
+        topo.build_topology_from_int(nodes, edges)
+        draw_graph(topo)
+
 
     def test_free_edge(self):
         topo = Topology()
@@ -214,5 +299,10 @@ class Test_topology(unittest.TestCase):
 
         assert flow not in edge.passing_flows
 
+    def test_torus2D(self):
+        # TODO: check if realy torus
+        topo = Topology()
+        tmp = torus2D(4,3) 
+        topo.build_topology_from_int(tmp[0], tmp[1])
 
 

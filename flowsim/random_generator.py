@@ -1,8 +1,5 @@
 from random import expovariate, randint, seed
-
-
-class LoopError(Exception):
-    pass
+from flowsim.flowsim_exception import LoopError
 
 
 class Random_generator(object):

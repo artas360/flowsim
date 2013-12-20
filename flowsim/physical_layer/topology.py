@@ -1,19 +1,10 @@
-#!/usr/bin/python
-
 import networkx
+import sys
 from edge import Edge
 from node import Node
-
-
-class NoSuchEdge(Exception):
-
-    pass
-
-
-class Foo_edge(object):
-
-    pass
-
+from node import Entry_node
+from node import Exit_node
+from flowsim.flowsim_exception import NoSuchEdge, DuplicatedNodeError, NoPathError
 
 class Topology(networkx.Graph):
 
@@ -67,7 +58,12 @@ class Topology(networkx.Graph):
         return self[node1][node2]['object']
 
     def shortest_path(self, node1, node2):
-        return networkx.shortest_path(self, node1, node2, weight='weight')
+        try:
+            return networkx.shortest_path(self, node1, node2, weight='weight')
+        except networkx.NetworkXNoPath:
+            raise NoPathError
+        except:
+            raise
 
     def build_topology_from_int(self, nodes, edges):
         # nodes -> list of int or list of (int, str) str->entry,exit
@@ -75,28 +71,53 @@ class Topology(networkx.Graph):
         # or (node1, node2, capacity, weight)
         temp_dict=dict()
 
-        # nodes.sort()
+        # TODO nodes.sort()
         for node in nodes:
             if type(node) == int:
-                new_node=Node(node)
-                temp_dict[node] = new_node
-                self.add_node(new_node)
-            elif len(node) == 2:
-                new_node=Node(node[0])
-                self.add_node(new_node)
-                temp_dict[node[0]] = new_node
-                if node[1] == 'entry':
+                node = {'number':node}
+            elif type(node) == tuple or type(node) == list:
+                if len(node) == 2:
+                    node = {'number':node[0], 'type':node[1]}
+                else:
+                    raise TypeError
+            if type(node) == dict:
+                node_type = node.pop('type', '')
+                if not node.has_key('name'):
+                    node['name'] = node['number']
+                if node_type == 'entry':
+                    new_node = Entry_node(**node)
                     self.entry_nodes.append(new_node)
-                elif node[1] == 'exit':
+                elif node_type == 'exit':
+                    new_node = Exit_node(**node)
                     self.exit_nodes.append(new_node)
+                else:
+                    new_node = Node(**node)
+                if temp_dict.has_key(node['name']):
+                    raise DuplicatedNodeError
+                temp_dict[node['name']] = new_node
+                self.add_node(new_node)
+            else:
+                raise TypeError
 
         for edge in edges:
-            if len(edge) == 2:
-                self.add_edge(temp_dict[edge[0]], temp_dict[edge[1]], Edge())
-            elif len(edge) == 3:
-                self.add_edge(temp_dict[edge[0]], temp_dict[edge[1]], Edge(edge[2]))
-            elif len(edge) == 4:
-                self.add_edge(temp_dict[edge[0]], temp_dict[edge[1]], Edge(edge[2]), edge[3])
+            temp_edge = dict()
+            if type(edge) == tuple or type(edge) == list:
+                temp_edge['nodes'] = (edge[0], edge[1])
+                if len(edge) == 2:
+                    pass
+                elif len(edge) == 3:
+                    temp_edge['capacity'] = edge[2]
+                elif len(edge) == 4:
+                    temp_edge['capacity'] = edge[2]
+                    temp_edge['weight'] = edge[3]
+                else:
+                    raise TypeError
+                edge = temp_edge
+            if type(edge) == dict:
+                nodes = edge.pop('nodes')
+                weight = edge.pop('weight', 1)
+                new_edge = Edge(**edge)
+                self.add_edge(temp_dict[nodes[0]], temp_dict[nodes[1]], new_edge, weight)
             else:
                 raise TypeError()
 
@@ -113,10 +134,27 @@ class Topology(networkx.Graph):
         return self.exit_nodes[number % len(self.exit_nodes)]
 
     def import_topology(self, filename):
-        # TODO
-        #detect if node is entry or exit
-        raise NotImplemented()
+        #TODO : catch exceptions
+        g = networkx.read_graphml(filename)
+        nodes = [{'name':node} for node in g.nodes()]
 
-    def draw_graph(self):
-        # TODO
-        raise NotImplemented()
+        self.build_topology_from_int(nodes, g.edges())
+
+def torus2D(x, y, edge_capacity=1):
+    array = [[i+j*y for i in xrange(y)] for j in xrange(x)]
+    nodes = []
+    edges = set()
+    for j in xrange(y):
+        for i in xrange(x):
+            nodes.append(array[i][j])
+            edges.add(frozenset((array[i][j], array[(i+1)%x][j])))
+            edges.add(frozenset((array[i][j], array[(i-1)%x][j])))
+            edges.add(frozenset((array[i][j], array[i][(j-1)%y])))
+            edges.add(frozenset((array[i][j], array[i][(j+1)%y])))
+    return [item for sublist in array for item in sublist], [tuple(fset) for fset in edges]
+            
+def draw_graph(topology):
+    import matplotlib.pyplot
+    networkx.draw(topology)
+    matplotlib.pyplot.draw()
+    matplotlib.pyplot.show()

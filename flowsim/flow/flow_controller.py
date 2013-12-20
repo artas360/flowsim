@@ -1,18 +1,5 @@
-#!/usr/bin/python
-
 import flow as flow_module
-
-
-class NoPathError(Exception):
-    pass
-
-
-class NotRegisteredFlow(Exception):
-    pass
-
-
-class RessourceAllocationError(Exception):
-    pass
+from flowsim.flowsim_exception import NoPathError, NotRegisteredFlow, RessourceAllocationError
 
 
 # TODO : list of input nodes, output nodes somewhere
@@ -27,12 +14,9 @@ class Flow_controller(object):
     def allocate_flow(self, node1, node2):
         if node1 == None or node2 == None:
             raise TypeError
-        #TODO : have to loop
         try:
             nodes = self.topology.shortest_path(node1, node2)
-            #print 'nodes in flow ', map(int,nodes)
-            #print 'Nodes, before edges', [(int(nodes[i]), int(nodes[i+1])) for i in xrange(len(nodes)-1)]
-        except:
+        except NoPathError:
             raise NoPathError()
         edges=[self.topology.get_edge_object(nodes[i], nodes[i+1]) for i in xrange(len(nodes)-1)]
         flow = flow_module.Flow(edges)

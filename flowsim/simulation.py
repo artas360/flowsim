@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 from flowsim.result import Result
 from flowsim.random_generator import Random_generator
 from flowsim.event.event import Event_manager
@@ -15,7 +13,8 @@ class Simulation(object):
         self.rand_seed=rand_seed
         self.result = Result()
         self.random_generator=None
-        self.max_event=float('inf')
+        self.topology = None
+        self.max_arrivals=float('inf')
 
     def init_simulation(self, nodes, edges):
         self.init_topology(nodes, edges)
@@ -45,13 +44,16 @@ class Simulation(object):
         self.event_manager.set_flow_controller(self.flow_controller)
 
     def end(self):
-        self.max_event -= 1
-        if self.max_event <= 0:
+        self.max_arrivals -= 1
+        if self.max_arrivals <= 0:
             return True
         return False
 
-    def launch_simulation(self, max_event=float('inf')):
-        self.max_event=max_event
+    def launch_simulation(self, max_arrivals=float('inf')):
+        self.max_arrivals=max_arrivals
         self.event_manager.start_event_processing()
 
-
+    def set_topology(self, topology):
+        self.topology = topology
+        self.flow_controller.topology = topology
+        self.random_generator.topology = topology
