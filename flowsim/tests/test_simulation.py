@@ -1,6 +1,7 @@
 import unittest
 from flowsim import Simulation
 
+
 class Test_Simulation(unittest.TestCase):
 
     def test_constructor(self):
@@ -15,7 +16,7 @@ class Test_Simulation(unittest.TestCase):
     def test_init_topology(self):
         sim = Simulation(0.2, 0.9, 21312)
         nodes = range(4)
-        edges=[(1,2),(2,0)]
+        edges = [(1, 2), (2, 0)]
 
         sim.init_topology(nodes, edges)
 
@@ -23,7 +24,7 @@ class Test_Simulation(unittest.TestCase):
         sim = Simulation(0.2, 0.9, 21312)
         sim.init_event_manager()
         nodes = range(4)
-        edges=[(1,2),(2,0)]
+        edges = [(1, 2), (2, 0)]
         sim.init_topology(nodes, edges)
 
         sim.init_flow_controller()
@@ -31,21 +32,18 @@ class Test_Simulation(unittest.TestCase):
     def test_init_simulation(self):
         sim = Simulation(0.2, 0.9, 21312)
         nodes = range(4)
-        edges=[(1,2),(2,0)]
+        edges = [(1, 2), (2, 0)]
         sim.init_simulation(nodes, edges)
 
     def test_launch_simulation(self):
         sim = Simulation(0.1, 0.9, 21312)
         nodes = range(4)
-        edges=[(1,2),(2,0)]
+        edges = [(1, 2), (2, 0)]
         sim.init_simulation(nodes, edges)
 
         sim.launch_simulation(50)
-        
-        print sim.event_manager.event_list
 
     def test_launch_simulation2(self):
-        print 'cplxe topo'
         sim = Simulation(0.5, 0.5, 21312)
         nodes = range(6)
         edges = [(nodes[0], nodes[3]),
@@ -58,4 +56,10 @@ class Test_Simulation(unittest.TestCase):
 
         sim.init_simulation(nodes, edges)
 
-        sim.launch_simulation(50)
+        sim.launch_simulation()
+
+    def test_result_simulation(self):
+        sim = Simulation(0.9, 0.9)
+        sim.init_simulation([0, 1, 2], [(0, 1), (0, 2), (1, 2)])
+        res = sim.launch_simulation()
+        assert (abs(res['Blocking_rate'] - 0.5) < 0.05)

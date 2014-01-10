@@ -1,5 +1,3 @@
-
-
 class NoPathError(Exception):
     pass
 
@@ -17,6 +15,10 @@ class NoSuchEdge(Exception):
 
 
 class DuplicatedNodeError(Exception):
+    pass
+
+
+class DuplicatedEdgeError(Exception):
     pass
 
 

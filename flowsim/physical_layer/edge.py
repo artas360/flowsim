@@ -1,7 +1,9 @@
 from flowsim.flowsim_exception import EdgeAllocationError
 
+
 class Edge(object):
-    constants={'LAST_FLOW_AVAILABLE':-1}
+    constants = {'LAST_FLOW_AVAILABLE': -1}
+
     def __init__(self, capacity=1, name=''):
         self.max_flows = capacity
         self.available_flows = self.max_flows
@@ -10,8 +12,11 @@ class Edge(object):
 
     def allocate_flow(self, flow):
         ret_value = 0
-        if self.available_flows == 0: raise EdgeAllocationError() # Flow_manager should not call in that case
-        elif self.available_flows == 1: ret_value = Edge.constants['LAST_FLOW_AVAILABLE']
+        # Flow_manager should not call in that case
+        if self.available_flows == 0:
+            raise EdgeAllocationError()
+        elif self.available_flows == 1:
+            ret_value = Edge.constants['LAST_FLOW_AVAILABLE']
 
         self.available_flows -= 1
         self.passing_flows.append(flow)

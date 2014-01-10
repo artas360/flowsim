@@ -7,14 +7,14 @@ from flowsim.result import Result
 
 
 class Simulation(object):
-    def __init__(self, arrival_rate, duration_rate, rand_seed=None):
+    def __init__(self, arrival_rate, service_rate, rand_seed=None):
         self.arrival_rate = arrival_rate
-        self.duration_rate = duration_rate
-        self.rand_seed=rand_seed
+        self.service_rate = service_rate
+        self.max_arrivals = float('inf')
+        self.random_generator = None
+        self.rand_seed = rand_seed
         self.result = Result()
-        self.random_generator=None
         self.topology = None
-        self.max_arrivals=float('inf')
 
     def init_simulation(self, nodes, edges):
         self.init_topology(nodes, edges)
@@ -22,8 +22,12 @@ class Simulation(object):
         self.init_event_manager()
         self.init_flow_controller()
 
-    def init_random_generator(self, arrival_generation_function=None, duration_function=None):
-        self.random_generator = Random_generator(self.topology, self.arrival_rate, self.duration_rate, self.rand_seed, arrival_generation_function, duration_function)
+    def init_random_generator(self, arrival_generation_function=None,
+                              duration_function=None):
+        self.random_generator = Random_generator(self.topology,
+                                                 self.rand_seed,
+                                                 arrival_generation_function,
+                                                 duration_function)
 
     def init_event_manager(self):
         self.event_manager = Event_manager(self, self.random_generator)
@@ -33,14 +37,19 @@ class Simulation(object):
         # edges -> list of (node1, node2) or (node1, node2, capacity)
         # or (node1, node2, capacity, weight)
         self.topology = Topology()
-        self.topology.build_topology_from_int(nodes, edges)
+        self.topology.build_topology_from_int(nodes,
+                                              edges,
+                                              self.arrival_rate,
+                                              self.service_rate)
 
     def import_topology(self, filename):
         self.topology = Topology()
         self.topology.import_topology(filename)
 
     def init_flow_controller(self):
-        self.flow_controller = Flow_controller(self.topology, self.event_manager, self)
+        self.flow_controller = Flow_controller(self.topology,
+                                               self.event_manager,
+                                               self)
         self.event_manager.set_flow_controller(self.flow_controller)
 
     def end(self):
@@ -50,10 +59,6 @@ class Simulation(object):
         return False
 
     def launch_simulation(self, max_arrivals=float('inf')):
-        self.max_arrivals=max_arrivals
+        self.max_arrivals = max_arrivals
         self.event_manager.start_event_processing()
-
-    def set_topology(self, topology):
-        self.topology = topology
-        self.flow_controller.topology = topology
-        self.random_generator.topology = topology
+        return self.result.get_results()

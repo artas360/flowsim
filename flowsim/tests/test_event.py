@@ -12,6 +12,7 @@ class Simu(object):
     def end(self):
         return False
 
+
 class Flow(object):
 
     def length(self):
@@ -27,73 +28,75 @@ class Flow_controller(object):
         return Flow()
 
     def free_flow(self, flow):
-        return 
+        return
 
 
 class Node(object):
-    pass
+
+    def __int__(self):
+        return 0
 
 
 class Topo(object):
 
-    def get_random_entry_node(self, numer):
+    def get_random_entry_node(self, number):
         return Node()
 
-    def get_random_exit_node(self, numer):
+    def get_random_exit_node(self, number):
         return Node()
 
 
 class Test_Event_manager(unittest.TestCase):
+
     def setUp(self):
-        self.rand_gen = Random_generator(Topo() , 0.2, 0.2, None)
+        self.rand_gen = Random_generator(Topo(), None)
 
     def create_events(self, event_manager):
-        type_list=[]
+        type_list = []
 
-        event_manager.add_event(
-                e_types.Arrival_Event,
-                event_manager.flow_controller)
-        type_list.append(e_types.Arrival_Event)
+        event_manager.add_event(Arrival_Event,
+                                Node(),
+                                arrival_rate=0.5,
+                                service_rate=0.5)
+        type_list.append(Arrival_Event)
 
-        event_manager.add_event(
-                e_types.End_flow_Event,
-                event_manager.flow_controller,
-                delay=1234,
-                issuer_flow=None)
-        type_list.append(e_types.End_flow_Event)
+        event_manager.add_event(End_flow_Event,
+                                Node(),
+                                delay=1234,
+                                issuer_flow=None)
+        type_list.append(End_flow_Event)
 
-        event_manager.add_event(
-                e_types.End_of_simulation_Event,
-                event_manager.flow_controller,
-                delay=1234)
-        type_list.append(e_types.End_of_simulation_Event)
+        event_manager.add_event(End_of_simulation_Event,
+                                Node(),
+                                delay=1234)
+        type_list.append(End_of_simulation_Event)
 
-        event_manager.add_event(
-                e_types.Flow_allocation_failure_Event,
-                event_manager.flow_controller)
-        type_list.append(e_types.Flow_allocation_failure_Event)
+        event_manager.add_event(Flow_allocation_failure_Event,
+                                Node())
+        type_list.append(Flow_allocation_failure_Event)
 
         return type_list
-
 
     def test_add_event(self):
         event_manager = Event_manager(Simu(), self.rand_gen)
         event_manager.set_flow_controller(Flow_controller())
 
-        event_manager.add_event(
-                e_types.Arrival_Event,
-                event_manager.flow_controller)
-        assert isinstance(event_manager.event_list.pop(), e_types.Arrival_Event)
+        event_manager.add_event(Arrival_Event,
+                                event_manager.flow_controller,
+                                arrival_rate=0.5,
+                                service_rate=0.5)
+        assert isinstance(event_manager.event_list.pop(),
+                          Arrival_Event)
 
-        self.assertRaises(TypeError, event_manager.add_event,
-                str,
-                event_manager.flow_controller)
+        self.assertRaises(TypeError,
+                          event_manager.add_event,
+                          str, event_manager.flow_controller)
 
     def test_event_types(self):
         event_manager = Event_manager(Simu(), self.rand_gen)
         event_manager.set_flow_controller(Flow_controller())
 
-        type_list=self.create_events(event_manager)
+        type_list = self.create_events(event_manager)
 
         [type_list.index(type(event)) for event in event_manager.event_list]
 
@@ -107,7 +110,7 @@ class Test_Event_manager(unittest.TestCase):
         event_manager = Event_manager(Simu(), self.rand_gen)
         event_manager.set_flow_controller(Flow_controller())
 
-        type_list=self.create_events(event_manager)
+        type_list = self.create_events(event_manager)
 
         for type in type_list:
             event_manager.handle_next_event()
@@ -116,9 +119,8 @@ class Test_Event_manager(unittest.TestCase):
         event_manager = Event_manager(Simu(), self.rand_gen)
         event_manager.set_flow_controller(Flow_controller())
 
-        type_list=self.create_events(event_manager)
+        type_list = self.create_events(event_manager)
 
         for i in xrange(len(event_manager.event_list)-1):
-            assert event_manager.event_list[i].delay_before_handling >= event_manager.event_list[i].delay_before_handling
-
-
+            assert event_manager.event_list[i].delay_before_handling >=\
+                event_manager.event_list[i].delay_before_handling
