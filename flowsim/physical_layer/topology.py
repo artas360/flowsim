@@ -11,9 +11,9 @@ class Topology(networkx.Graph):
 
     def __init__(self):
         super(self.__class__, self).__init__()
-        self.edges_unavailable = dict()
         self.entry_nodes = []
         self.exit_nodes = []
+        self.infinity = float('inf')
 
     def add_node(self, node):
         super(self.__class__, self).add_node(node)
@@ -31,43 +31,33 @@ class Topology(networkx.Graph):
 
     def set_edge_unavailable(self, node1, node2):
         try:
-            edge = self[node1][node2]  # it's a dict() ! Keeping it all
-            self.edges_unavailable[(node1, node2)] = edge
-            self.remove_edge(node1, node2)
+            self[node1][node2]['edge_former_weight'] =\
+                self[node1][node2]['weight']
+            self[node1][node2]['weight'] = self.infinity
         except KeyError:
             raise NoSuchEdge()
 
-    def free_edge(self, edge, flow):
+    def free_edge(self, node1, node2, flow):
         try:
-            edge_index = [x['object'] for x in
-                          self.edges_unavailable.values()].index(edge)
-            (node1, node2) = self.edges_unavailable.keys()[edge_index]
-            self.set_edge_available(node1, node2)
-
-        except ValueError:
-            pass
-
-        finally:
-            edge.free_flow(flow)
-
-    def set_edge_available(self, node1, node2):
-        try:
-            edge = self.edges_unavailable.pop((node1, node2))
-        except IndexError:
-            return
-        self.add_edge(node1, node2, edge['object'], edge['weight'])
-        self[node1][node2] = edge
+            if self[node1][node2]['weight'] == self.infinity:
+                self[node1][node2]['weight'] =\
+                    self[node1][node2]['edge_former_weight']
+            self[node1][node2]['object'].free_flow(flow)
+        except KeyError:
+            raise NoSuchEdge
 
     def get_edge_object(self, node1, node2):
         return self[node1][node2]['object']
 
     def shortest_path(self, node1, node2):
         try:
-            return networkx.shortest_path(self, node1, node2, weight='weight')
+            path = networkx.shortest_path(self, node1, node2, weight='weight')
+            if self.infinity in [self[path[i]][path[i + 1]]['weight']
+                                 for i in xrange(len(path) - 1)]:
+                raise NoPathError
+            return path
         except networkx.NetworkXNoPath:
             raise NoPathError
-        except:
-            raise
 
     def build_topology_from_int(self, nodes, edges,
                                 arrival_rate=None, service_rate=None):
