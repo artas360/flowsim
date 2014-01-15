@@ -61,6 +61,9 @@ class Result(object):
         return (dictionary['computed_values'][key] *
                 (number_of_values - 1) + value) / number_of_values
 
+    def sum(self, dictionary, key, value, **kwargs):
+        return dictionary['computed_values'][key] + value
+
     def event_division(self, dictionary, key, update_param, key_numerator,
                        key_denominator, **kwargs):
         try:
