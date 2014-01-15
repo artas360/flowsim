@@ -170,40 +170,12 @@ class Test_topology(unittest.TestCase):
 
         topo.set_edge_unavailable(nodes[1], nodes[2])
 
-        self.assertRaises(KeyError, topo.get_edge_object, nodes[1], nodes[2])
-
-        assert edge in topo.edges_unavailable.values()
+        assert topo[nodes[1]][nodes[2]]['weight'] == topo.infinity
 
         self.assertRaises(NoSuchEdge,
                           topo.set_edge_unavailable,
                           nodes[0],
                           nodes[5])
-
-    def test_set_edge_available(self):
-
-        topo = Topology()
-        nodes = [Node(self.arrival_rate, self.service_rate, i)
-                 for i in xrange(6)]
-        topo.add_nodes(nodes)
-        topo.add_edges([(nodes[0], nodes[3], {'object': Edge()}),
-                        (nodes[0], nodes[1], {'object': Edge()}),
-                        (nodes[0], nodes[2], {'object': Edge()}),
-                        (nodes[1], nodes[2], {'object': Edge()}),
-                        (nodes[3], nodes[2], {'object': Edge()}),
-                        (nodes[4], nodes[2], {'object': Edge()}),
-                        (nodes[4], nodes[5], {'object': Edge()})],
-                       edge_weight=1)
-        edge = topo[nodes[1]][nodes[2]]
-
-        topo.set_edge_unavailable(nodes[1], nodes[2])
-
-        self.assertRaises(KeyError, topo.get_edge_object, nodes[1], nodes[2])
-
-        topo.set_edge_available(nodes[1], nodes[2])
-
-        assert topo[nodes[1]][nodes[2]] == edge
-
-        assert len(topo.edges_unavailable) == 0
 
     def test_build_topology_from_int(self):
 
@@ -343,9 +315,9 @@ class Test_topology(unittest.TestCase):
 
         topo.set_edge_unavailable(nodes[1], nodes[2])
 
-        topo.free_edge(edge, flow)
+        topo.free_edge(nodes[1], nodes[2], flow)
 
-        assert not topo[nodes[1]][nodes[2]] in topo.edges_unavailable.values()
+        assert not topo[nodes[1]][nodes[2]]['weight'] == topo.infinity
 
         assert flow not in edge.passing_flows
 
