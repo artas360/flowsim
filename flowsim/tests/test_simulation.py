@@ -60,6 +60,16 @@ class Test_Simulation(unittest.TestCase):
 
     def test_result_simulation(self):
         sim = Simulation(0.9, 0.9)
-        sim.init_simulation([0, 1, 2], [(0, 1), (0, 2), (1, 2)])
+        sim.init_simulation([0, 1], [(0, 1)])
         res = sim.launch_simulation()
         assert (abs(res['Blocking_rate'] - 0.5) < 0.05)
+
+    def test_result_simulation2(self):
+        sim = Simulation(0.9, 0.9)
+        nodes = [0, 1, 2]
+        edges = [(0, 1), (1, 2), (2, 0)]
+
+        sim.init_simulation(nodes, edges)
+        res = sim.launch_simulation()
+        # Is it realy the expected result?
+        assert (abs(res['Blocking_rate'] - 0.29) < 0.05)
