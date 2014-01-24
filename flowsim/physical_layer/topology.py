@@ -7,7 +7,7 @@ from flowsim.flowsim_exception import NoSuchEdge,\
     NoPathError
 
 
-class Topology(networkx.Graph):
+class Topology(networkx.DiGraph):
 
     def __init__(self):
         super(self.__class__, self).__init__()
@@ -74,6 +74,7 @@ class Topology(networkx.Graph):
         # nodes -> list of int or list of (int, str) str->entry,exit
         # edges -> list of (node1, node2) or (node1, node2, capacity)
         # or (node1, node2, capacity, weight)
+        # Every edge is both ways if not edge['unidir'] set or set to False
         temp_dict = dict()
 
         # TODO nodes.sort()
@@ -126,11 +127,18 @@ class Topology(networkx.Graph):
             if type(edge) == dict:
                 nodes = edge.pop('nodes')
                 weight = edge.pop('weight', 1)
+                unidir = edge.pop('unidir', False)
                 new_edge = Edge(**edge)
                 self.add_edge(temp_dict[nodes[0]],
                               temp_dict[nodes[1]],
                               new_edge,
                               weight)
+                if not unidir:
+                    new_edge = Edge(**edge)
+                    self.add_edge(temp_dict[nodes[1]],
+                                  temp_dict[nodes[0]],
+                                  new_edge,
+                                  weight)
             else:
                 raise TypeError()
 

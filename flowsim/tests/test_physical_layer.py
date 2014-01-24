@@ -135,7 +135,7 @@ class Test_topology(unittest.TestCase):
                         (nodes[0], nodes[2], {'object': Edge()}),
                         (nodes[1], nodes[2], {'object': Edge()}),
                         (nodes[3], nodes[2], {'object': Edge()}),
-                        (nodes[4], nodes[2], {'object': Edge()}),
+                        (nodes[2], nodes[4], {'object': Edge()}),
                         (nodes[4], nodes[5], {'object': Edge()})],
                        edge_weight=1)
 
