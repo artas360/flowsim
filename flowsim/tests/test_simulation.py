@@ -73,3 +73,15 @@ class Test_Simulation(unittest.TestCase):
         res = sim.launch_simulation()
         # Is it realy the expected result?
         assert (abs(res['Blocking_rate'] - 0.29) < 0.05)
+
+    def test_reset_simulation(self):
+        sim = Simulation(0.9, 0.9)
+        nodes = [0, 1, 2]
+        edges = [(0, 1), (1, 2), (2, 0)]
+
+        sim.init_simulation(nodes, edges)
+        res = sim.launch_simulation()
+
+        sim.reset()
+
+

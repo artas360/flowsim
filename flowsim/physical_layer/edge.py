@@ -36,3 +36,7 @@ class Edge(object):
 
     def get_name(self):
         return self.name
+
+    def reset(self):
+        self.passing_flows = []
+        self.available_flows = self.max_flows

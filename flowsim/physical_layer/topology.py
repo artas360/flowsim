@@ -156,6 +156,10 @@ class Topology(networkx.DiGraph):
 
         self.build_topology_from_int(nodes, g.edges())
 
+    def reset(self):
+        map(lambda x: x.reset(), self.nodes_iter())
+        map(lambda x: x[2]['object'].reset() and self.free_edge(x[0], x[1], None), self.edges_iter(data=True))
+
 
 def torus2D(x, y, edge_capacity=1):
     if x <= 2 or y <= 2:

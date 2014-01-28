@@ -62,3 +62,9 @@ class Simulation(object):
         self.max_arrivals = max_arrivals
         self.event_manager.start_event_processing()
         return self.result.get_results()
+
+    def reset(self):
+        self.topology.reset()
+        self.init_random_generator()
+        self.init_event_manager()
+        self.init_flow_controller()

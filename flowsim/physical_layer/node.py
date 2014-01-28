@@ -21,6 +21,9 @@ class Node(object):
     def get_service_rate(self):
         return self.service_rate
 
+    def reset(self):
+        pass
+
 
 class Entry_node(Node):
     pass
