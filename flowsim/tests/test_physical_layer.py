@@ -32,6 +32,17 @@ class Test_node(unittest.TestCase):
              Node(self.arrival_rate, self.service_rate, -1)]
         assert set(map(int, nodes)) == set([0, 1, 2, 6, 7, 8])
 
+    def test_reset(self):
+        node = Node(self.arrival_rate, self.service_rate)
+        assert (node.get_arrival_rate() == self.arrival_rate)
+        assert (node.get_service_rate() == self.service_rate)
+        node.reset()
+        assert (node.get_arrival_rate() == self.arrival_rate)
+        assert (node.get_service_rate() == self.service_rate)
+        node.reset(.1, .2)
+        assert (node.get_arrival_rate() == .1)
+        assert (node.get_service_rate() == .2)
+
 
 class Test_edge(unittest.TestCase):
 
@@ -66,6 +77,16 @@ class Test_edge(unittest.TestCase):
         assert not flow in edge.passing_flows
 
         self.assertRaises(EdgeAllocationError, edge.free_flow, Flow())
+
+    def test_reset(self):
+        edge = Edge(2)
+        flow = Flow()
+
+        edge.allocate_flow(flow)
+        edge.reset()
+
+        assert(edge.available_flows == edge.max_flows)
+        assert(edge.passing_flows == [])
 
 
 class Test_topology(unittest.TestCase):
@@ -321,6 +342,26 @@ class Test_topology(unittest.TestCase):
         assert not topo[nodes[1]][nodes[2]]['weight'] == topo.infinity
 
         assert flow not in edge.passing_flows
+
+    def test_reset(self):
+        topo = Topology()
+
+        n = [Node(.1, .2), Node(.2, .3)]
+        e = Edge()
+
+        topo.add_nodes([n[0], n[1]])
+        topo.add_edge(n[0], n[1], e)
+
+        topo.set_edge_unavailable(n[0], n[1])
+
+        topo.reset()
+        assert(topo[n[0]][n[1]]['weight'] != topo.infinity)
+
+        topo.reset(.5, .6)
+        assert(n[0].get_arrival_rate() == .5
+               and n[0].get_service_rate() == .6)
+        assert(n[1].get_arrival_rate() == .5
+               and n[1].get_service_rate() == .6)
 
     def test_torus2D(self):
         topo = Topology()

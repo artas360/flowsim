@@ -42,7 +42,8 @@ class Topology(networkx.DiGraph):
             if self[node1][node2]['weight'] == self.infinity:
                 self[node1][node2]['weight'] =\
                     self[node1][node2]['edge_former_weight']
-            self[node1][node2]['object'].free_flow(flow)
+            if flow is not None:
+                self[node1][node2]['object'].free_flow(flow)
         except KeyError:
             raise NoSuchEdge
 
@@ -156,10 +157,11 @@ class Topology(networkx.DiGraph):
 
         self.build_topology_from_int(nodes, g.edges())
 
-    def reset(self):
-        map(lambda x: x.reset(), self.nodes_iter())
-        map(lambda x: x[2]['object'].reset() and
-            self.free_edge(x[0], x[1], None),
+    def reset(self, arrival_rate=None, service_rate=None):
+        map(lambda x: x.reset(arrival_rate, service_rate), self.nodes_iter())
+        map(lambda x: x[2]['object'].reset(),
+            self.edges_iter(data=True))
+        map(lambda x: self.free_edge(x[0], x[1], None),
             self.edges_iter(data=True))
 
 
