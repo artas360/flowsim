@@ -83,5 +83,3 @@ class Test_Simulation(unittest.TestCase):
         res = sim.launch_simulation()
 
         sim.reset()
-
-

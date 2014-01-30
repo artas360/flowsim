@@ -7,6 +7,7 @@ from flowsim.physical_layer.edge import Edge, EdgeAllocationError
 from flowsim.physical_layer.topology import Topology
 from flowsim.physical_layer.topology import draw_graph
 from flowsim.physical_layer.topology import torus2D
+from flowsim.physical_layer.topology import torus3D
 from flowsim.physical_layer.topology import NoSuchEdge
 from flowsim.physical_layer.topology import DuplicatedNodeError
 
@@ -322,9 +323,21 @@ class Test_topology(unittest.TestCase):
         assert flow not in edge.passing_flows
 
     def test_torus2D(self):
-        # TODO: check if realy torus
         topo = Topology()
         tmp = torus2D(4, 3)
+        assert(tmp[0] == range(4 * 3))
+        # self.assert(tmp[1] == TODO )
         topo.build_topology_from_int(tmp[0], tmp[1],
                                      self.arrival_rate,
                                      self.service_rate)
+
+    def test_torus3D(self):
+        # TODO: check if realy torus
+        topo = Topology()
+        tmp = torus3D(4, 3, 3)
+        assert(tmp[0] == range(4 * 3 * 3))
+        topo.build_topology_from_int(tmp[0], tmp[1],
+                                     self.arrival_rate,
+                                     self.service_rate)
+        # Visual check
+        # draw_graph(topo)

@@ -158,13 +158,15 @@ class Topology(networkx.DiGraph):
 
     def reset(self):
         map(lambda x: x.reset(), self.nodes_iter())
-        map(lambda x: x[2]['object'].reset() and self.free_edge(x[0], x[1], None), self.edges_iter(data=True))
+        map(lambda x: x[2]['object'].reset() and
+            self.free_edge(x[0], x[1], None),
+            self.edges_iter(data=True))
 
 
-def torus2D(x, y, edge_capacity=1):
+def torus2D(x, y, start_index=0):
     if x <= 2 or y <= 2:
         raise NotImplemented
-    array = [[i + j * y for i in xrange(y)] for j in xrange(x)]
+    array = [[start_index + i + j * y for i in xrange(y)] for j in xrange(x)]
     nodes = []
     edges = set()
     for j in xrange(y):
@@ -178,8 +180,31 @@ def torus2D(x, y, edge_capacity=1):
             [tuple(fset) for fset in edges])
 
 
+def torus3D(x, y, z):
+    if x <= 2 or y <= 2 or z <= 2:
+        raise NotImplemented
+
+    nodes = []
+    edges = []
+
+    for depth in xrange(z):
+        (tmp_nodes, tmp_edges) = torus2D(x, y, x * y * depth)
+        nodes.extend(tmp_nodes)
+        edges.extend(tmp_edges)
+
+    # 3rd Dim edges
+    edges.extend([(i, i + x * y) for i in xrange(x * y * (z - 1))])
+    edges.extend([(i, i - x * y * (z - 1))
+                 for i in xrange(x * y * (z - 1), x * y * z)])
+
+    return (nodes, edges)
+
+
 def draw_graph(topology):
     import matplotlib.pyplot
-    networkx.draw(topology)
+    pos = networkx.spring_layout(topology)
+    node_labels = dict([(u, u.number) for u in topology.nodes_iter()])
+    networkx.draw(topology, pos=pos, hold=True, with_labels=False)
+    networkx.draw_networkx_labels(topology, pos, labels=node_labels)
     matplotlib.pyplot.draw()
     matplotlib.pyplot.show()
