@@ -7,6 +7,7 @@ from flowsim.physical_layer.edge import Edge, EdgeAllocationError
 from flowsim.physical_layer.topology import Topology
 from flowsim.physical_layer.topology import draw_graph
 from flowsim.physical_layer.topology import torus2D
+from flowsim.physical_layer.topology import torus3D
 from flowsim.physical_layer.topology import NoSuchEdge
 from flowsim.physical_layer.topology import DuplicatedNodeError
 
@@ -30,6 +31,17 @@ class Test_node(unittest.TestCase):
             [Node(self.arrival_rate, self.service_rate),
              Node(self.arrival_rate, self.service_rate, -1)]
         assert set(map(int, nodes)) == set([0, 1, 2, 6, 7, 8])
+
+    def test_reset(self):
+        node = Node(self.arrival_rate, self.service_rate)
+        assert (node.get_arrival_rate() == self.arrival_rate)
+        assert (node.get_service_rate() == self.service_rate)
+        node.reset()
+        assert (node.get_arrival_rate() == self.arrival_rate)
+        assert (node.get_service_rate() == self.service_rate)
+        node.reset(.1, .2)
+        assert (node.get_arrival_rate() == .1)
+        assert (node.get_service_rate() == .2)
 
 
 class Test_edge(unittest.TestCase):
@@ -65,6 +77,16 @@ class Test_edge(unittest.TestCase):
         assert not flow in edge.passing_flows
 
         self.assertRaises(EdgeAllocationError, edge.free_flow, Flow())
+
+    def test_reset(self):
+        edge = Edge(2)
+        flow = Flow()
+
+        edge.allocate_flow(flow)
+        edge.reset()
+
+        assert(edge.available_flows == edge.max_flows)
+        assert(edge.passing_flows == [])
 
 
 class Test_topology(unittest.TestCase):
@@ -135,7 +157,7 @@ class Test_topology(unittest.TestCase):
                         (nodes[0], nodes[2], {'object': Edge()}),
                         (nodes[1], nodes[2], {'object': Edge()}),
                         (nodes[3], nodes[2], {'object': Edge()}),
-                        (nodes[4], nodes[2], {'object': Edge()}),
+                        (nodes[2], nodes[4], {'object': Edge()}),
                         (nodes[4], nodes[5], {'object': Edge()})],
                        edge_weight=1)
 
@@ -170,40 +192,12 @@ class Test_topology(unittest.TestCase):
 
         topo.set_edge_unavailable(nodes[1], nodes[2])
 
-        self.assertRaises(KeyError, topo.get_edge_object, nodes[1], nodes[2])
-
-        assert edge in topo.edges_unavailable.values()
+        assert topo[nodes[1]][nodes[2]]['weight'] == topo.infinity
 
         self.assertRaises(NoSuchEdge,
                           topo.set_edge_unavailable,
                           nodes[0],
                           nodes[5])
-
-    def test_set_edge_available(self):
-
-        topo = Topology()
-        nodes = [Node(self.arrival_rate, self.service_rate, i)
-                 for i in xrange(6)]
-        topo.add_nodes(nodes)
-        topo.add_edges([(nodes[0], nodes[3], {'object': Edge()}),
-                        (nodes[0], nodes[1], {'object': Edge()}),
-                        (nodes[0], nodes[2], {'object': Edge()}),
-                        (nodes[1], nodes[2], {'object': Edge()}),
-                        (nodes[3], nodes[2], {'object': Edge()}),
-                        (nodes[4], nodes[2], {'object': Edge()}),
-                        (nodes[4], nodes[5], {'object': Edge()})],
-                       edge_weight=1)
-        edge = topo[nodes[1]][nodes[2]]
-
-        topo.set_edge_unavailable(nodes[1], nodes[2])
-
-        self.assertRaises(KeyError, topo.get_edge_object, nodes[1], nodes[2])
-
-        topo.set_edge_available(nodes[1], nodes[2])
-
-        assert topo[nodes[1]][nodes[2]] == edge
-
-        assert len(topo.edges_unavailable) == 0
 
     def test_build_topology_from_int(self):
 
@@ -343,16 +337,48 @@ class Test_topology(unittest.TestCase):
 
         topo.set_edge_unavailable(nodes[1], nodes[2])
 
-        topo.free_edge(edge, flow)
+        topo.free_edge(nodes[1], nodes[2], flow)
 
-        assert not topo[nodes[1]][nodes[2]] in topo.edges_unavailable.values()
+        assert not topo[nodes[1]][nodes[2]]['weight'] == topo.infinity
 
         assert flow not in edge.passing_flows
 
+    def test_reset(self):
+        topo = Topology()
+
+        n = [Node(.1, .2), Node(.2, .3)]
+        e = Edge()
+
+        topo.add_nodes([n[0], n[1]])
+        topo.add_edge(n[0], n[1], e)
+
+        topo.set_edge_unavailable(n[0], n[1])
+
+        topo.reset()
+        assert(topo[n[0]][n[1]]['weight'] != topo.infinity)
+
+        topo.reset(.5, .6)
+        assert(n[0].get_arrival_rate() == .5
+               and n[0].get_service_rate() == .6)
+        assert(n[1].get_arrival_rate() == .5
+               and n[1].get_service_rate() == .6)
+
     def test_torus2D(self):
-        # TODO: check if realy torus
         topo = Topology()
         tmp = torus2D(4, 3)
+        assert(tmp[0] == range(4 * 3))
+        # self.assert(tmp[1] == TODO )
         topo.build_topology_from_int(tmp[0], tmp[1],
                                      self.arrival_rate,
                                      self.service_rate)
+
+    def test_torus3D(self):
+        # TODO: check if realy torus
+        topo = Topology()
+        tmp = torus3D(4, 3, 3)
+        assert(tmp[0] == range(4 * 3 * 3))
+        topo.build_topology_from_int(tmp[0], tmp[1],
+                                     self.arrival_rate,
+                                     self.service_rate)
+        # Visual check
+        # draw_graph(topo)

@@ -61,6 +61,9 @@ class Result(object):
         return (dictionary['computed_values'][key] *
                 (number_of_values - 1) + value) / number_of_values
 
+    def sum(self, dictionary, key, value, **kwargs):
+        return dictionary['computed_values'][key] + value
+
     def event_division(self, dictionary, key, update_param, key_numerator,
                        key_denominator, **kwargs):
         try:
@@ -86,11 +89,11 @@ class Result(object):
                 [float('-inf') for i in xrange(self.check_samples)]
         self.convergence[key]['samples'][cntr] =\
             self.process_node_value(key, lambda x: sum(x) / len(x))
-        # Comparing oldest and newest values
-        res = self.convergence[key]['samples'][cntr] -\
-            self.convergence[key]['samples'][(cntr + 1) % self.check_samples]
+        # Comparing all samples to the new one
+        res = map(lambda x: abs(self.convergence[key]['samples'][cntr] - x),
+                  self.convergence[key]['samples'])
         self.convergence[key]['counter'] = (cntr + 1) % self.check_samples
-        if abs(res) <= epsilon:
+        if reduce(lambda x, y: x and y, [diff < epsilon for diff in res]):
             return True
         return False
 

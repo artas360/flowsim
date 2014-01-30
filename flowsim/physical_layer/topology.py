@@ -7,13 +7,13 @@ from flowsim.flowsim_exception import NoSuchEdge,\
     NoPathError
 
 
-class Topology(networkx.Graph):
+class Topology(networkx.DiGraph):
 
     def __init__(self):
         super(self.__class__, self).__init__()
-        self.edges_unavailable = dict()
         self.entry_nodes = []
         self.exit_nodes = []
+        self.infinity = float('inf')
 
     def add_node(self, node):
         super(self.__class__, self).add_node(node)
@@ -31,49 +31,41 @@ class Topology(networkx.Graph):
 
     def set_edge_unavailable(self, node1, node2):
         try:
-            edge = self[node1][node2]  # it's a dict() ! Keeping it all
-            self.edges_unavailable[(node1, node2)] = edge
-            self.remove_edge(node1, node2)
+            self[node1][node2]['edge_former_weight'] =\
+                self[node1][node2]['weight']
+            self[node1][node2]['weight'] = self.infinity
         except KeyError:
             raise NoSuchEdge()
 
-    def free_edge(self, edge, flow):
+    def free_edge(self, node1, node2, flow):
         try:
-            edge_index = [x['object'] for x in
-                          self.edges_unavailable.values()].index(edge)
-            (node1, node2) = self.edges_unavailable.keys()[edge_index]
-            self.set_edge_available(node1, node2)
-
-        except ValueError:
-            pass
-
-        finally:
-            edge.free_flow(flow)
-
-    def set_edge_available(self, node1, node2):
-        try:
-            edge = self.edges_unavailable.pop((node1, node2))
-        except IndexError:
-            return
-        self.add_edge(node1, node2, edge['object'], edge['weight'])
-        self[node1][node2] = edge
+            if self[node1][node2]['weight'] == self.infinity:
+                self[node1][node2]['weight'] =\
+                    self[node1][node2]['edge_former_weight']
+            if flow is not None:
+                self[node1][node2]['object'].free_flow(flow)
+        except KeyError:
+            raise NoSuchEdge
 
     def get_edge_object(self, node1, node2):
         return self[node1][node2]['object']
 
     def shortest_path(self, node1, node2):
         try:
-            return networkx.shortest_path(self, node1, node2, weight='weight')
+            path = networkx.shortest_path(self, node1, node2, weight='weight')
+            if self.infinity in [self[path[i]][path[i + 1]]['weight']
+                                 for i in xrange(len(path) - 1)]:
+                raise NoPathError
+            return path
         except networkx.NetworkXNoPath:
             raise NoPathError
-        except:
-            raise
 
     def build_topology_from_int(self, nodes, edges,
                                 arrival_rate=None, service_rate=None):
         # nodes -> list of int or list of (int, str) str->entry,exit
         # edges -> list of (node1, node2) or (node1, node2, capacity)
         # or (node1, node2, capacity, weight)
+        # Every edge is both ways if not edge['unidir'] set or set to False
         temp_dict = dict()
 
         # TODO nodes.sort()
@@ -126,11 +118,18 @@ class Topology(networkx.Graph):
             if type(edge) == dict:
                 nodes = edge.pop('nodes')
                 weight = edge.pop('weight', 1)
+                unidir = edge.pop('unidir', False)
                 new_edge = Edge(**edge)
                 self.add_edge(temp_dict[nodes[0]],
                               temp_dict[nodes[1]],
                               new_edge,
                               weight)
+                if not unidir:
+                    new_edge = Edge(**edge)
+                    self.add_edge(temp_dict[nodes[1]],
+                                  temp_dict[nodes[0]],
+                                  new_edge,
+                                  weight)
             else:
                 raise TypeError()
 
@@ -158,11 +157,18 @@ class Topology(networkx.Graph):
 
         self.build_topology_from_int(nodes, g.edges())
 
+    def reset(self, arrival_rate=None, service_rate=None):
+        map(lambda x: x.reset(arrival_rate, service_rate), self.nodes_iter())
+        map(lambda x: x[2]['object'].reset(),
+            self.edges_iter(data=True))
+        map(lambda x: self.free_edge(x[0], x[1], None),
+            self.edges_iter(data=True))
 
-def torus2D(x, y, edge_capacity=1):
+
+def torus2D(x, y, start_index=0):
     if x <= 2 or y <= 2:
         raise NotImplemented
-    array = [[i + j * y for i in xrange(y)] for j in xrange(x)]
+    array = [[start_index + i + j * y for i in xrange(y)] for j in xrange(x)]
     nodes = []
     edges = set()
     for j in xrange(y):
@@ -176,8 +182,31 @@ def torus2D(x, y, edge_capacity=1):
             [tuple(fset) for fset in edges])
 
 
+def torus3D(x, y, z):
+    if x <= 2 or y <= 2 or z <= 2:
+        raise NotImplemented
+
+    nodes = []
+    edges = []
+
+    for depth in xrange(z):
+        (tmp_nodes, tmp_edges) = torus2D(x, y, x * y * depth)
+        nodes.extend(tmp_nodes)
+        edges.extend(tmp_edges)
+
+    # 3rd Dim edges
+    edges.extend([(i, i + x * y) for i in xrange(x * y * (z - 1))])
+    edges.extend([(i, i - x * y * (z - 1))
+                 for i in xrange(x * y * (z - 1), x * y * z)])
+
+    return (nodes, edges)
+
+
 def draw_graph(topology):
     import matplotlib.pyplot
-    networkx.draw(topology)
+    pos = networkx.spring_layout(topology)
+    node_labels = dict([(u, u.number) for u in topology.nodes_iter()])
+    networkx.draw(topology, pos=pos, hold=True, with_labels=False)
+    networkx.draw_networkx_labels(topology, pos, labels=node_labels)
     matplotlib.pyplot.draw()
     matplotlib.pyplot.show()

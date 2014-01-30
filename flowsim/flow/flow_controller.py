@@ -21,7 +21,7 @@ class Flow_controller(object):
             raise NoPathError()
         edges = [self.topology.get_edge_object(nodes[i], nodes[i+1])
                  for i in xrange(len(nodes)-1)]
-        flow = flow_module.Flow(edges)
+        flow = flow_module.Flow(nodes)
 
         try:
             for edge in edges:
@@ -46,8 +46,9 @@ class Flow_controller(object):
             self.flows.remove(flow)
         except:
             raise NotRegisteredFlow()
-        for edge in flow.get_edges():
-            self.topology.free_edge(edge, flow)
+        nodes = flow.get_nodes()
+        for i in xrange(len(nodes) - 1):
+            self.topology.free_edge(nodes[i], nodes[i + 1], flow)
 
     def get_entry_nodes(self):
         return self.topology.get_entry_nodes()

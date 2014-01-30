@@ -25,9 +25,14 @@ class Event_manager:
             return
         # Substracting duration of current event to
         # all other events' durations
+        time_elapsed = event.delay_before_handling if\
+            event.delay_before_handling != float('-inf') else 0.
+
         for x in self.event_list:
-            x.delay_before_handling -= event.delay_before_handling if\
-                event.delay_before_handling != float('-inf') else 0.
+            x.delay_before_handling -= time_elapsed
+        self.result.update_computed_value('time_elapsed',
+                                          time_elapsed,
+                                          update_function=self.result.sum)
 
         event.handle_event()
         event.automated_update_result()
