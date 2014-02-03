@@ -1,5 +1,5 @@
-#ifndef __NODEH__
-#define __NODEH__
+#ifndef __NODEHPP__
+#define __NODEHPP__
 
 #include <iostream>
 #include <string.h>
@@ -26,6 +26,9 @@ class Node : public Abstract_node {
         std::string name;
 
     public:
+        Node() noexcept;
+        Node(Node const&);
+        Node& operator=(Node const&);
         Node(float arrival_rate, float service_rate, std::string const& name = "") : arrival_rate(arrival_rate), service_rate(service_rate), name(name)
         {
             if(arrival_rate < 0 or service_rate < 0)

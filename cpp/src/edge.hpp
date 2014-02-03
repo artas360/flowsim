@@ -1,5 +1,5 @@
-#ifndef __EDGEH__
-#define __EDGEH__
+#ifndef __EDGEHPP__
+#define __EDGEHPP__
 
 #include <vector>
 #include <string>
@@ -37,6 +37,9 @@ class Edge : public Abstract_edge<Flow> {
         }
 
     public:
+        Edge() noexcept;
+        Edge(Edge const&);
+        Edge& operator=(Edge const&);
         Edge(int capacity = 1, float weight = 1) : max_flows_(capacity),
                                  available_flows_(capacity),
                                  weight_(weight),
