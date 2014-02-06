@@ -9,7 +9,8 @@
 
 class Abstract_node {
     public:
-        virtual operator int() = 0;
+        virtual decltype(*this)& operator=(Node const&);
+        virtual operator int() const = 0;
         virtual std::string const& get_name() const = 0;
         virtual float get_arrival_rate() const = 0;
         virtual float get_service_rate() const = 0;
@@ -26,7 +27,7 @@ class Node : public Abstract_node {
         std::string name;
 
     public:
-        Node() noexcept;
+        Node() noexcept; // Should not increase counter because of graph instanciation
         Node(Node const&);
         Node& operator=(Node const&);
         Node(float arrival_rate, float service_rate, std::string const& name = "") : arrival_rate(arrival_rate), service_rate(service_rate), name(name)

@@ -3,6 +3,8 @@
 
 #include <boost/heap/priority_queue.hpp>
 #include "allocator.hpp"
+#include "result.hpp"
+#include "event_types.hpp"
 
 // Reversed order comparasion
 template <typename T1, typename T2>
@@ -12,41 +14,22 @@ struct event_comparison {
     }
 };
 
-template <class Event_manager, class Event_issuer>
-class Event {
-    typedef float time_t;
-    private:
-        time_t duration_;
-        time_t delay_before_handling_;
-        Event_manager event_manager_;
-        Event_issuer event_issuer_;
-        
-    public:
-        Event(Event_manager event_manager, Event_issuer event_issuer);
-        // Usefull for construction?
-        template <typename... Args>
-         void init(Args... params);
-        virtual int get_delay() const = 0;
-        virtual int get_duration() const = 0;
-        virtual void automated_update_result() = 0;
-        virtual void update_result() = 0;
-        virtual void handle_event() = 0;
-        virtual void pass_time(time_t delay) = 0;
-};
-
 template <class Simulation>
 class Event_manager {
     typedef FooAllocator Allocator;
-    typedef Event<typename Simulation::Event_manager_t, typename Simulation::Event_issuer_t> event_t;
+    typedef Event<Event_manager<Simulation>> event_t;
     typedef typename boost::heap::priority_queue<event_t*, boost::heap::compare<event_comparison<event_t, event_t>>> event_queue;
 
     private:
-        Allocator allocator;
+        Allocator allocator_;
         event_queue event_list_;
-        EOS = false;
+        bool EOS_;
+        typename Simulation::result_t result_;
+        typename Simulation::flow_controller_t const& flow_controller_;
 
     public:
-        Event_manager() : event_list_(), allocator() {}
+        Event_manager(typename Simulation::flow_controller_t const& flow_controller) : allocator_(), event_list_(), EOS_(false), result_(),  flow_controller_(flow_controller){
+        }
 
         void handle_next_event(){
             if (event_list_.empty())
@@ -63,26 +46,54 @@ class Event_manager {
             event->handle_event();
             event->automated_update_result();
             event_list_.pop();
-            allocator.free(event);
+            allocator_.free(event);
         }
 
         template <typename event_type_t, typename... Args>
-         void add_event(typename Simulation::Event_issuer_t const& event_issuer, Args... param) {
-             event_list_.emplace(allocator.allocate<event_type_t>(event_issuer, param...));
+         void add_event(typename event_type_t::event_issuer_t const& event_issuer, Args... param) {
+             event_list_.emplace(allocator_.allocate<event_type_t>(event_issuer, param...));
         }
 
-        void start_event_processing(typename Simulation::result_t &result) {
+        void start_event_processing() {
             bool has_converged = false;
-            long counter = 0;
+            //long counter = 0;
 
             // for(;;) {}
-            while (not EOS and not has_converged) {
+            while (not EOS_ and not has_converged) {
                 handle_next_event();
             }
         }
 
-        void set_EOS();
+        void set_EOS() {
+            EOS_ = true;
+        }
+
+        typename Simulation::result_t const& get_result() {
+            return result_;
+        }
+
         bool new_arrivals() const;
 };
 
 #endif
+
+#if TEST
+
+struct FooResult {
+};
+
+struct FooFlowController {
+};
+
+struct FooSimulation {
+    typedef FooResult result_t;
+    typedef FooFlowController flow_controller_t;
+};
+
+int main() {
+    Event_manager<FooSimulation> evt((FooFlowController()));
+    Arrival_event<decltype(evt)> a(evt, Node(1));
+    return EXIT_SUCCESS;
+}
+
+#endif 
