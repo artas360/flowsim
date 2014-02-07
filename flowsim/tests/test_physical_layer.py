@@ -43,10 +43,31 @@ class Test_node(unittest.TestCase):
         assert (node.get_arrival_rate() == .1)
         assert (node.get_service_rate() == .2)
 
+    def test_copy(self):
+        node1 = Node(1.2, 1.3)
+        node2 = node1.copy()
+
+        assert(not node1 is node2)
+        assert(node1.arrival_rate == node2.arrival_rate and
+               node1.service_rate == node2.service_rate and
+               node1.number == node2.number and
+               node1.name == node2.name)
+        assert (Node.counter == 1)
+
 
 class Test_edge(unittest.TestCase):
 
-    def test_get_sont_value(self):
+    def test_copy(self):
+        edge1 = Edge()
+        edge2 = edge1.copy()
+
+        assert(not edge1 is edge2)
+        assert(edge1.max_flows == edge2.max_flows and
+               edge1.available_flows == edge2.max_flows and
+               edge1.passing_flows == edge2.passing_flows and
+               edge1.name == edge2.name)
+
+    def test_get_const_value(self):
         edge = Edge()
         assert edge.get_const_value('LAST_FLOW_AVAILABLE') == -1
 
@@ -95,6 +116,26 @@ class Test_topology(unittest.TestCase):
         Node.counter = 0
         self.arrival_rate = 0.5
         self.service_rate = 0.5
+
+    def test_copy(self):
+        topo = Topology()
+        n1, n2 = (Node(.1, .2), Node(.3, .4))
+        edge = Edge()
+        topo.add_nodes([n1, n2])
+        topo.add_edge(n1, n2, edge, 3)
+
+        topo2 = topo.copy()
+
+        assert (topo.edges()[0][0].name == topo2.edges()[0][0].name and
+                not topo.edges()[0][0] is topo2.edges()[0][0])
+        assert (topo.edges()[0][1].name == topo2.edges()[0][1].name and
+                not topo.edges()[0][1] is topo2.edges()[0][1])
+        assert (topo2.edges()[0][0].name == n1.name and
+                topo2.edges()[0][1].name == n2.name)
+        assert (topo2.edges(data=True)[0][2]['weight'] == 3 and
+                not topo2.edges(data=True)[0][2]['object'] is edge and
+                topo2.edges(data=True)[0][2]['object'].name == edge.name)
+        assert (not topo2 is topo)
 
     def test_add_node(self):
         top = Topology()

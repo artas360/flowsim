@@ -8,6 +8,16 @@ class Test_Simulation(unittest.TestCase):
         sim = Simulation(0.2, 0.9)
         sim = Simulation(0.2, 0.9, 21312)
 
+    def test_copy(self):
+        sim = Simulation(0.2, 0.9, 21312)
+        sim.init_simulation([0, 1], [(0, 1)])
+        sim2 = sim.copy()
+        assert (not sim is sim2)
+        assert (sim.arrival_rate == sim2.arrival_rate and
+                sim.service_rate == sim2.service_rate and
+                sim.rand_seed == sim2.rand_seed and
+                not sim.topology is sim2.topology)
+
     def test_init_event_manager(self):
         sim = Simulation(0.2, 0.9, 21312)
 

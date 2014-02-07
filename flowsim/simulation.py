@@ -16,6 +16,15 @@ class Simulation(object):
         self.result = Result()
         self.topology = None
 
+    def copy(self):
+        sim = Simulation(self.arrival_rate, self.service_rate, self.rand_seed)
+        sim.topology = self.topology.copy()\
+            if self.topology is not None else None
+        sim.init_random_generator()
+        sim.init_event_manager()
+        sim.init_flow_controller()
+        return sim
+
     def init_simulation(self, nodes, edges):
         self.init_topology(nodes, edges)
         self.init_random_generator()

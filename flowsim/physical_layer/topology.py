@@ -15,6 +15,19 @@ class Topology(networkx.DiGraph):
         self.exit_nodes = []
         self.infinity = float('inf')
 
+    def copy(self):
+        topo = Topology()
+        ref_dict = dict()
+        for node in self.nodes_iter():
+            ref_dict[node] = node.copy()
+            topo.add_node(ref_dict[node])
+        for (src, dst, d) in self.edges_iter(data=True):
+            topo.add_edge(ref_dict[src],
+                          ref_dict[dst],
+                          d['object'].copy(),
+                          d['weight'])
+        return topo
+
     def add_node(self, node):
         super(self.__class__, self).add_node(node)
 

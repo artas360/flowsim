@@ -10,6 +10,14 @@ class Edge(object):
         self.passing_flows = []
         self.name = name if name != '' else str(id(self))
 
+    def copy(self):
+        edge = Edge()
+        edge.max_flows = self.max_flows
+        edge.available_flows = self.max_flows
+        edge.passing_flows = []
+        edge.name = self.name
+        return edge
+
     def allocate_flow(self, flow):
         ret_value = 0
         # Flow_manager should not call in that case
