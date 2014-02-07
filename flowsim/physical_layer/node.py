@@ -9,6 +9,14 @@ class Node(object):
         self.arrival_rate = arrival_rate
         self.service_rate = service_rate
 
+    def copy(self):
+        node = foo_node()
+        node.number = self.number
+        node.name = self.name
+        node.arrival_rate = self.arrival_rate
+        node.service_rate = self.service_rate
+        return node
+
     def __int__(self):
         return self.number
 
@@ -26,6 +34,13 @@ class Node(object):
             self.arrival_rate = arrival_rate
         if service_rate is not None:
             self.service_rate = service_rate
+
+
+def foo_node():
+    tmp_counter = Node.counter
+    node = Node(0., 0.)
+    Node.counter = tmp_counter
+    return node
 
 
 class Entry_node(Node):
