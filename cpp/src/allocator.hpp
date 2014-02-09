@@ -1,11 +1,15 @@
 #ifndef __ALLOCATOR_HPP__
 #define __ALLOCATOR_HPP__
 
+#include "include.hpp"
+
 struct FooAllocator {
         template <class T, typename... Args>
-        T* allocate(Args... params) {return new T(params...);}
+        T* construct(Args&&... params) {return new T(params...);}
+        template <class T, typename... Args>
+        void construct(T* p, Args&&... params) {p = new T(params...);}
         template <class T>
-        void free(T* t) {delete t;}
+        void destroy(T* t) {delete t;}
 };
 
 #endif

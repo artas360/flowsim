@@ -6,25 +6,25 @@
 #include <cassert>
 #include <limits>
 
-#include "exception.hpp"
+#include "include.hpp"
 
-template<class Flow>
+template<class flow_key_t>
 class Abstract_edge {
     public:
         enum {LAST_FLOW_AVAILABLE};
-        virtual void allocate_flow(Flow const&) = 0;
-        virtual void free_flow(Flow const&) = 0;
+        virtual void allocate_flow(flow_key_t const&) = 0;
+        virtual void free_flow(flow_key_t const&) = 0;
         virtual unsigned get_weight() const = 0;
 };
 
-template<class Flow>
-class Edge : public Abstract_edge<Flow> {
+template<class flow_key_t, class weight_t=float, class flow_container=std::vector>
+class Edge : public Abstract_edge<flow_key_t> {
     private:
-        int max_flows_;
-        int available_flows_;
-        float weight_, former_weight_;
-        std::vector<Flow*> passing_flows_;
-        const float infinite_weight_ = std::numeric_limits<float>::infinity();
+        size_t max_flows_;
+        size_t available_flows_;
+        weight_t weight_, former_weight_;
+        flow_container<flow_key_t const&> passing_flows_;
+        const weight_t infinite_weight_ = std::numeric_limits<weight_t>::infinity();
 
         void switch_weight() {
             if (weight_ == infinite_weight_) {
@@ -40,7 +40,7 @@ class Edge : public Abstract_edge<Flow> {
         Edge() noexcept;
         Edge(Edge const&);
         Edge& operator=(Edge const&);
-        Edge(int capacity = 1, float weight = 1) : max_flows_(capacity),
+        Edge(size_t capacity = 1, weight_t weight = 1) : max_flows_(capacity),
                                  available_flows_(capacity),
                                  weight_(weight),
                                  former_weight_(infinite_weight_)
@@ -49,26 +49,26 @@ class Edge : public Abstract_edge<Flow> {
                 throw Edge_allocation_error();
         }
 
-        int allocate_flow(Flow const& flow) {
+        size_t allocate_flow(flow_key_t const& flow) {
             if (available_flows_ == 0)
                 throw Edge_allocation_error();
 
-            passing_flows_.push_back(&flow);
+            passing_flows_.push_back(flow);
             if (available_flows_ == 1)
                 switch_weight();
 
             return --available_flows_;
         }
 
-        void free_flow(Flow const& flow) {
+        void free_flow(flow_key_t const& flow) {
             assert(available_flows_ < max_flows_);
             if (weight_ == infinite_weight_)
                 switch_weight();
-            passing_flows_.remove(&flow);
+            passing_flows_.remove(flow);
             ++available_flows_;
         }
 
-        float get_weight() const {
+        weight_t  get_weight() const {
             return weight_;
         }
 };

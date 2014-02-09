@@ -8,6 +8,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 
+#include "include.hpp"
+
 namespace boost{
     enum edge_obj1_t { edge_obj1 };
     BOOST_INSTALL_PROPERTY(edge, obj1);
@@ -28,6 +30,9 @@ class Topology {
     typedef typename std::vector<Edge_tuple>::iterator Edge_tuple_it;
     typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_descriptor;
     typedef typename boost::graph_traits<Graph>::edge_descriptor edge_descriptor;
+    typedef vertex_descriptor node_key_t;
+    typedef edge_descriptor edge_key_t;
+
     private:
         Graph g;
         LOOK EXAMPLE L43 !
@@ -72,7 +77,11 @@ class Topology {
 
         void set_edge_unavailable(Node const& node1, Node const& node2);
         void free_edge(Node const& node1, Node const& node2);
-        void get_edge_object(Node const& node1, Node const& node2) const;
+
+        Edge_obj& get_edge_object(node_key_t const& node1, node_key_t const& node2);
+        Edge_obj& get_edge_object(edge_descriptor const& edge_key);
+
+        edge_key_t const& get_edge_key(node_key_t const& node1, node_key_t const& node2);
 
         void shortest_path(Node const& src, Node const& dst) const{ //Throws
             vertex_descriptor u = boost::vertex(src, g), v = boost::vertex(dst, g);
