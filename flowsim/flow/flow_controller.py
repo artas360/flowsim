@@ -36,7 +36,7 @@ class Flow_controller(object):
         except RessourceAllocationError:
             self.topology.set_edge_unavailable(node[i], node[i+1])
             for edge in edges[:i-1]:
-                edge.free_flow()
+                edge.free_flow(flow)
         else:
             self.flows.append(flow)
             return flow
