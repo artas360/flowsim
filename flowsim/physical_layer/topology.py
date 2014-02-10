@@ -25,7 +25,8 @@ class Topology(networkx.DiGraph):
             topo.add_edge(ref_dict[src],
                           ref_dict[dst],
                           d['object'].copy(),
-                          d['weight'])
+                          d['weight'] if d['weight'] != self.infinity else\
+                              d['edge_former_weight'])
         return topo
 
     def add_node(self, node):
