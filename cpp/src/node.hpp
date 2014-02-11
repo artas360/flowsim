@@ -1,55 +1,100 @@
 #ifndef __NODEHPP__
 #define __NODEHPP__
 
-#include <iostream>
-#include <string.h>
+#include <string>
+#include <limits>
 
 #include "include.hpp"
 
+template <typename rate_t, typename name_t, typename id_t>
 class Abstract_node {
     public:
-        virtual operator int() const = 0;
-        virtual std::string const& get_name() const = 0;
-        virtual float get_arrival_rate() const = 0;
-        virtual float get_service_rate() const = 0;
+        virtual operator id_t() const = 0;
+        virtual id_t const& get_number() const = 0;
+        virtual name_t const& get_name() const = 0;
+        virtual rate_t const& get_arrival_rate() const = 0;
+        virtual rate_t const& get_service_rate() const = 0;
 };
 
-class Node : public Abstract_node {
+template <typename rate_t=float, typename name_t=std::string, typename id_t=size_t>
+class Node : public Abstract_node<rate_t, name_t, id_t> {
     // TODO initialize somewhere
-    static unsigned long counter;
+    static id_t counter_;
 
     private:
-        long number;
-        float arrival_rate;
-        float service_rate;
-        std::string name;
+        id_t number_;
+        rate_t arrival_rate_;
+        rate_t service_rate_;
+        name_t name_;
 
     public:
         Node() noexcept {} // Should not increase counter because of graph instanciation
-        Node(Node const&) {}
-        Node& operator=(Node const&);
-        Node(float arrival_rate, float service_rate, std::string const& name = "") : arrival_rate(arrival_rate), service_rate(service_rate), name(name)
-        {
-            if(arrival_rate < 0 or service_rate < 0)
+
+        Node(Node const& other) {
+            *this = other;
+        }
+
+        Node(rate_t const& arrival_rate, rate_t const& service_rate, name_t const& name = "") : arrival_rate_(arrival_rate),
+                                                                                                service_rate_(service_rate),
+                                                                                                name_(name) {
+            if(arrival_rate_ < 0 or service_rate_ < 0)
                 throw Wrong_parameter();
-            number = ++counter;
+            number_ = ++counter_;
         }
 
-        operator int() const {
-            return number;
+        Node& operator=(Node const& other) {
+            number_ = other.number_;
+            arrival_rate_ = other.arrival_rate_;
+            service_rate_ = other.service_rate_;
+            name_ = other.name_;
+            return *this;
         }
 
-        std::string const& get_name() const {
-            return name;
+        operator id_t() const {
+            return number_;
         }
 
-        float get_arrival_rate() const {
-            return arrival_rate;
+        id_t const& get_number() const {
+            return number_;
         }
 
-        float get_service_rate() const {
-            return service_rate;
+        name_t const& get_name() const {
+            return name_;
+        }
+
+        rate_t const& get_arrival_rate() const {
+            return arrival_rate_;
+        }
+
+        rate_t const& get_service_rate() const {
+            return service_rate_;
         }
 };
+
+#endif
+
+#if TEST
+
+template<>
+size_t Node<>::counter_ = 0;
+
+int test_node() {
+    Node<> a, b(.1, .2, "bolt"), c(b), d(.3, .4);
+
+    FTEST(b.get_name() == "bolt" and c.get_name() == "bolt");
+    FTEST(b.get_number() == 1 and c.get_number() == 1);
+    FTEST((b.get_arrival_rate() - 0.1) < std::numeric_limits<float>::epsilon() and
+          (c.get_arrival_rate() - 0.1) < std::numeric_limits<float>::epsilon());
+    FTEST((b.get_service_rate() - 0.2) < std::numeric_limits<float>::epsilon() and
+          (c.get_service_rate() - 0.2) < std::numeric_limits<float>::epsilon());
+    FTEST(d.get_number() == 2);
+    ASSERT_RAISES(Node<>, -1, 0);
+
+    return EXIT_SUCCESS;
+}
+
+//int main() {
+//    return test_node();
+//}
 
 #endif

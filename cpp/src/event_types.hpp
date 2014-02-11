@@ -21,7 +21,7 @@ class Event {
         virtual void handle_event() = 0;
 
         static event_time_t immediate_handling() {
-            return std::numeric_limits<event_time_t>::infinity();
+            return -std::numeric_limits<event_time_t>::infinity();
         }
 
         virtual event_time_t get_delay() const {
@@ -59,7 +59,7 @@ class Specialized_event : Event<Event_manager>{
         event_issuer_t &event_issuer_;
 };
 
-template <class Event_manager, class Event_issuer=Node>
+template <class Event_manager, class Event_issuer=Node<>>
 class Arrival_event : public Specialized_event<Event_manager, Event_issuer>{
     public:
         Arrival_event(Event_manager &event_manager, Event_issuer &event_issuer) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, 0) {
@@ -78,7 +78,7 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer>{
         float service_rate_;
 };
 
-template <class Event_manager, class Event_issuer=Node>
+template <class Event_manager, class Event_issuer=Node<>>
 class End_flow_event : public Specialized_event<Event_manager, Event_issuer> {
     typedef typename Event_manager::flow_t flow_t;
     typedef typename Event_manager::flow_controller_t flow_controller_t;

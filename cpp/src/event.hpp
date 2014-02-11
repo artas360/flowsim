@@ -2,10 +2,12 @@
 #define __EVENT_HPP__
 
 #include <boost/heap/priority_queue.hpp>
+#include <iostream>
+#include <queue>
+#include <list>
 
 #include "include.hpp"
 #include "allocator.hpp"
-#include "result.hpp"
 #include "event_types.hpp"
 
 // Reversed order comparasion
@@ -19,11 +21,21 @@ struct event_comparison {
 template <class Simulation>
 class Event_manager {
     public:
+        typedef Event<Event_manager<Simulation>> event_t;
+        typedef typename boost::heap::priority_queue<event_t*, boost::heap::compare<event_comparison<event_t, event_t>>> event_queue;
+        // Can't iterate over std::priority_queue
+        // typedef std::priority_queue<event_t*, std::list<event_t*>, event_comparison<event_t, event_t>> event_queue;
         typedef typename Simulation::result_t result_t;
         typedef typename Simulation::flow_controller_t flow_controller_t;
         typedef typename Simulation::flow_t flow_t;
+        typedef typename event_queue::iterator iterator;
+        typedef typename event_queue::const_iterator const_iterator;
 
-        Event_manager(typename Simulation::flow_controller_t const& flow_controller) : allocator_(), event_list_(), EOS_(false), result_(),  flow_controller_(flow_controller){
+        Event_manager(typename Simulation::flow_controller_t const& flow_controller) : allocator_(),
+                                                                                       event_list_(),
+                                                                                       EOS_(false),
+                                                                                       result_(),
+                                                                                       flow_controller_(flow_controller){
         }
 
         ~Event_manager() {
@@ -41,8 +53,8 @@ class Event_manager {
             }
 
             event_t *event = event_list_.top();
-            typename event_t::event_time_t time_elapsed = event->get_delay();
-            for (typename event_queue::iterator it = event_list_.begin(); it != event_list_.end(); ++it) {
+            typename event_t::event_time_t time_elapsed = event->get_delay() != event_t::immediate_handling() ? event->get_delay() : 0;
+            for (iterator it = event_list_.begin(); it != event_list_.end(); ++it) {
                 (*it)->pass_time(time_elapsed);
                 // No heap fixup since not changing order // s_handle_from_iterator
                 // TODO : update time elapsed in results
@@ -77,12 +89,23 @@ class Event_manager {
             return result_;
         }
 
+        const_iterator begin() const {
+            return event_list_.begin();
+        }
+
+        const_iterator end() const {
+            return event_list_.end();
+        }
+
+        event_t* const& top() const {
+            return event_list_.top();
+        }
+
         bool new_arrivals() const;
+
 
     private:
         typedef FooAllocator Allocator;
-        typedef Event<Event_manager<Simulation>> event_t;
-        typedef typename boost::heap::priority_queue<event_t*, boost::heap::compare<event_comparison<event_t, event_t>>> event_queue;
 
         Allocator allocator_;
         event_queue event_list_;
@@ -95,7 +118,19 @@ class Event_manager {
 
 #if TEST
 
-unsigned long Node::counter = 0;
+template <class Simulation>
+std::ostream& operator<< (std::ostream &out, Event_manager<Simulation> const& event_manager) {
+    out << "reading events" << std::endl;
+    for(auto it: event_manager) {
+        out << it->get_delay() << std::endl;
+    }
+    out << "Top event" << std::endl;
+    out << event_manager.top()->get_delay() << std::endl;
+    return out;
+}
+
+//template<>
+//auto Node<>::counter_ = 0;
 
 struct FooResult {
 };
@@ -114,21 +149,28 @@ struct FooSimulation {
 
 int test_event() {
     Event_manager<FooSimulation> evt((FooFlowController()));
-    Node node(0.1, 0.2);
+    Node<> node(0.1, 0.2);
     FooFlow flow;
-    Arrival_event<decltype(evt), Node> b(evt, node);
-    End_flow_event<decltype(evt), Node> c(evt, node, 10, flow);
-    End_of_simulation_event<decltype(evt), Node> d(evt, node, 10);
-    Flow_allocation_success_event<decltype(evt), Node> e(evt, node, flow);
-    Flow_allocation_failure_event<decltype(evt), Node> f(evt, node);
+    Arrival_event<decltype(evt), Node<>> b(evt, node);
+    End_flow_event<decltype(evt), Node<>> c(evt, node, 10, flow);
+    End_of_simulation_event<decltype(evt), Node<>> d(evt, node, 1);
+    Flow_allocation_success_event<decltype(evt), Node<>> e(evt, node, flow);
+    Flow_allocation_failure_event<decltype(evt), Node<>> f(evt, node);
 
-    evt.add_event<decltype(b)>(node); 
     evt.add_event<decltype(c)>(node, 10, flow); 
-    evt.add_event<decltype(d)>(node, 10); 
-    evt.add_event<decltype(e)>(node, flow); 
-    evt.add_event<decltype(f)>(node); 
-    evt.start_event_processing();
+    FTEST(evt.top()->get_delay() == 10);
+    evt.add_event<decltype(d)>(node, 1); 
+    FTEST(evt.top()->get_delay() == 1);
     evt.add_event<decltype(b)>(node); 
+    FTEST(evt.top()->get_delay() == 0);
+    evt.add_event<decltype(e)>(node, flow); 
+    FTEST(evt.top()->get_delay() == decltype(evt)::event_t::immediate_handling());
+    evt.add_event<decltype(f)>(node); 
+    FTEST(evt.top()->get_delay() == decltype(evt)::event_t::immediate_handling());
+    evt.start_event_processing();
+    // Check with valgrind that if was free'd
+    evt.add_event<decltype(b)>(node); 
+    
 
     return EXIT_SUCCESS;
 }

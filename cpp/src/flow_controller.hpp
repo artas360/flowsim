@@ -39,10 +39,15 @@ class Flow_controller {
     typedef typename Topology::edge_key_t edge_key_t;
     typedef Key key_t;
     public:
-        Flow_controller(Topology topology) : topology_(topology), flows_(), key_gen_() {}
+        Flow_controller(Topology topology) : topology_(topology),
+                                             flows_(),
+                                             key_gen_() {
+        }
 
         virtual key_t const& allocate_flow(node_key_t const& src, node_key_t const& dst) {
             modified_edges_.clear();
+
+            // Adding flow to container
             key_t flow_key(key_gen_());
             assert(Key_generator::is_valid_key(flow_key));
             std::pair<typename Flow_container::iterator, bool> pair;
@@ -53,6 +58,7 @@ class Flow_controller {
                 throw No_path_error();
             }
 
+            // Trying to reserve Edge ressources along the path
             typename flow_t::container_t::const_iterator it(*(pair.first()).get_nodes().cbegin());
             typename flow_t::container_t::value_type former_node(*it);
 
@@ -67,6 +73,8 @@ class Flow_controller {
                 }
                 return flow_key;
             } catch (Ressource_allocation_error e) {
+                // Reverting changes if something wrong happened
+                // Should not happen since shortest_path gives allocable edges
                 topology_.set_edge_unavailable(edge_key);
                 for(auto edge_key: modified_edges_) {
                     topology_.get_edge_object(edge_key).free_flow(flow_key);
@@ -85,6 +93,7 @@ class Flow_controller {
             typename flow_t::container_t::const_iterator it(*(iter.second()).get_nodes().cbegin());
             typename flow_t::container_t::value_type former_node(*it);
 
+            // freeing edges in flow
             for(++it; it != *(iter.second()).get_nodes().cend(); ++it) {
                 edge_key_t const& edge_key(topology_.get_edge_key(former_node, *it));
                     topology_.free_edge(edge_key, flow_key);
