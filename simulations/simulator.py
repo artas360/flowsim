@@ -1,16 +1,17 @@
 #!/usr/bin/python
 
-from threading import Thread
+from multiprocessing import Process, Manager
 from argparse import ArgumentParser
+from copy import deepcopy
 from cPickle import dump, load
 from time import sleep, strftime
 from time import time as epoc_time
 
 from flowsim import Simulation
-from flowsim.physical_layer.topology import torus2D
+from flowsim.physical_layer.topology import torus2D, torus3D
 
 
-class Simulation_thread(Thread):
+class Simulation_thread(Process):
     def __init__(self, simulation, result):
         # self.simulation = deepcopy(simulation)
         self.simulation = simulation
@@ -44,14 +45,14 @@ timestr = strftime("%Y%m%d-%H%M%S")
 parser = ArgumentParser(
     description='Run simulation or process results.')
 
-parser.add_argument('--runs-per-sample', type=int, nargs=1, default=6,
+parser.add_argument('--runs-per-sample', type=int, default=6,
                     help='Number of simulation to run for each rate')
 parser.add_argument('--arrival-rate-range', nargs=3, default=[.1, 1., .1],
                     help="""arrival rate: first last range\n
-                    Last is not is the range""", type=int)
+                    Last is not is the range""", type=float)
 parser.add_argument('--service-rate-range', nargs=3, default=[.1, .2, .1],
                     help="""arrival rate: first last range\n
-                    Last is not is the range""", type=int)
+                    Last is not is the range""", type=float)
 parser.add_argument('--torus3D', type=int, nargs=3, default=[16, 16, 16],
                     help="""Run on topology torus 3D with given dimensions""")
 parser.add_argument('-o', type=str, dest='filename',
@@ -73,27 +74,35 @@ if('run' in args.action):
     arrival_rate = [f for f in float_range(*args.arrival_rate_range)]
     service_rate = [f for f in float_range(*args.service_rate_range)]
 
-    (nodes, edges) = torus2D(3, 3)
+    (nodes, edges) = torus3D(*args.torus3D)
 
-    waiting_delay = 6
+    waiting_delay = 1
 
     s = Simulation(0, 0)
 
     s.init_simulation(nodes, edges)
 
-    results = dict([((arr, serv), [{} for i in xrange(runs_per_rate)])
-                    for serv in service_rate for arr in arrival_rate])
+    manager = Manager()
+
+    results = {}
+
     threads = range(runs_per_rate)
+
+    # Sould be effective since the dict is written only at the end
+    # of thread
+    shared_dicts = [manager.dict() for i in range(runs_per_rate)]
 
     for a_rate in arrival_rate:
         for s_rate in service_rate:
             s.reset(a_rate, s_rate)
             for i in xrange(runs_per_rate):
+                map(lambda x: x.clear(), shared_dicts)
                 threads[i] =\
-                    Simulation_thread(s.copy(), results[(a_rate, s_rate)][i])
+                    Simulation_thread(s.copy(), shared_dicts[i])
                 threads[i].start()
-            while any(map(lambda x: x.isAlive(), threads)):
+            while any(map(lambda x: x.is_alive(), threads)):
                 sleep(waiting_delay)
+            results[(a_rate, s_rate)] = [deepcopy(d) for d in shared_dicts]
 
     # Dumping results
     result_file = open(args.filename, 'w')
