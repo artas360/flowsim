@@ -88,12 +88,13 @@ class Result(object):
             self.convergence[key]['samples'] =\
                 [float('-inf') for i in xrange(self.check_samples)]
         self.convergence[key]['samples'][cntr] =\
-            self.process_node_value(key, lambda x: sum(x) / len(x))
+            self.process_node_value(key, lambda x: float(sum(x)) / len(x))
         # Comparing all samples to the new one
         res = map(lambda x: abs(self.convergence[key]['samples'][cntr] - x),
                   self.convergence[key]['samples'])
         self.convergence[key]['counter'] = (cntr + 1) % self.check_samples
-        if reduce(lambda x, y: x and y, [diff < epsilon for diff in res]):
+        if all([diff < epsilon for diff in res]) and\
+                any([diff != 0 for diff in res]):
             return True
         return False
 
