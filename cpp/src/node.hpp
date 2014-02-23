@@ -1,5 +1,5 @@
-#ifndef __NODEHPP__
-#define __NODEHPP__
+#ifndef __NODE_HPP__
+#define __NODE_HPP__
 
 #include <string>
 #include <limits>
@@ -30,13 +30,13 @@ class Node : public Abstract_node<rate_t, name_t, id_t> {
     public:
         Node() noexcept {} // Should not increase counter because of graph instanciation
 
-        Node(Node const& other) {
+        Node(Node const& other) noexcept {
             *this = other;
         }
 
-        Node(rate_t const& arrival_rate, rate_t const& service_rate, name_t const& name = "") : arrival_rate_(arrival_rate),
-                                                                                                service_rate_(service_rate),
-                                                                                                name_(name) {
+        Node(rate_t const& arrival_rate, rate_t const& service_rate, name_t const& name = name_t()) : arrival_rate_(arrival_rate),
+                                                                                                      service_rate_(service_rate),
+                                                                                                      name_(name) {
             if(arrival_rate_ < 0 or service_rate_ < 0)
                 throw Wrong_parameter();
             number_ = ++counter_;
@@ -93,8 +93,8 @@ int test_node() {
     return EXIT_SUCCESS;
 }
 
-//int main() {
-//    return test_node();
-//}
+int main() {
+    return test_node();
+}
 
 #endif

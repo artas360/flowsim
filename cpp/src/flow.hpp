@@ -6,46 +6,46 @@
 
 #include "include.hpp"
 
-// Storing refs to keys instead of keys, is it usefull?
-// In case keys are not base types
-template <class node_key_t, class container_t=std::vector<std::reference_wrapper<node_key_t>>>
+template <class edge_key_t, class container_t=std::vector<edge_key_t>>
 class Flow {
     public:
-        Flow(container_t const& node_list) : node_list_(node_list) /*copy*/ {}
-        Flow(container_t const&& node_list) : node_list_(node_list) /*move*/ {}
+        Flow(container_t const& edge_list) : edge_list_(edge_list) /*copy*/ {}
+        Flow(container_t const&& edge_list) : edge_list_(edge_list) /*move*/ {}
 
-        container_t const& get_nodes() const {
-            return node_list_;
+        container_t const& get_edges() const {
+            return edge_list_;
         }
 
         typename container_t::size_type length() const {
-            return node_list_.size();
+            return edge_list_.size();
         }
 
     private:
-        const container_t node_list_;
+        const container_t edge_list_;
 };
 
 #endif
 
 #if TEST
 
+#include <iostream>
+
 int test_flow() {
     int keys[] = {1, 2, 5, 8};
-    std::vector<std::reference_wrapper<int>> vect(keys, keys + sizeof(keys) / sizeof(int));
+    std::vector<int> vect(keys, keys + sizeof(keys) / sizeof(int));
 
     Flow<int> flow(vect);
-    FTEST(flow.get_nodes()[2] == keys[2]);
+    FTEST(flow.get_edges()[2] == keys[2]);
     FTEST(flow.length() == sizeof(keys) / sizeof(int));
 
-    Flow<int> flow2(std::vector<std::reference_wrapper<int>> (keys, keys + sizeof(keys) / sizeof(int)));
-    FTEST(flow2.get_nodes()[2] == keys[2]);
+    Flow<int> flow2(std::vector<int> (keys, keys + sizeof(keys) / sizeof(int)));
+    FTEST(flow2.get_edges()[2] == keys[2]);
     FTEST(flow2.length() == sizeof(keys) / sizeof(int));
 
     keys[2] = 0;
 
-    FTEST(flow.get_nodes()[2] == keys[2]);
-    FTEST(flow2.get_nodes()[2] == keys[2]);
+    FTEST(flow.get_edges()[2] == 5);
+    FTEST(flow2.get_edges()[2] == 5);
 
     return EXIT_SUCCESS;
 }

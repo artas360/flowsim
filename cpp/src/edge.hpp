@@ -1,5 +1,5 @@
-#ifndef __EDGEHPP__
-#define __EDGEHPP__
+#ifndef __EDGE_HPP__
+#define __EDGE_HPP__
 
 #include <list>
 #include <limits>
@@ -7,23 +7,31 @@
 
 #include "include.hpp"
 
+template <typename weight_t>
+struct infinity_wrapper_std {
+    weight_t operator()() {
+        return std::numeric_limits<weight_t>::infinity();
+    }
+};
+
 template<class flow_key_t, class weight_t, class flow_container_t>
 class Abstract_edge {
     public:
         enum {LAST_FLOW_AVAILABLE};
         virtual size_t allocate_flow(flow_key_t const&) = 0;
         virtual void free_flow(flow_key_t const&) = 0;
-        virtual weight_t get_weight() const = 0;
+        virtual weight_t const& get_weight() const = 0;
 };
 
-template<class flow_key_t, class weight_t=float, class flow_container_t=std::list<std::reference_wrapper<const flow_key_t>>>
+// FIXME? use std::remove_reference?
+template<class flow_key_t, class weight_t=float, class infinity_wrapper=infinity_wrapper_std<weight_t>, class flow_container_t=std::list<flow_key_t>>
 class Edge : public Abstract_edge<flow_key_t, weight_t, flow_container_t> {
     private:
         size_t max_flows_;
         size_t available_flows_;
         weight_t weight_, former_weight_;
         flow_container_t passing_flows_;
-        const weight_t infinite_weight_ = std::numeric_limits<weight_t>::infinity();
+        const weight_t infinite_weight_ = infinity_wrapper()();
 
         void switch_weight() {
             if (weight_ == infinite_weight_) {
@@ -36,7 +44,7 @@ class Edge : public Abstract_edge<flow_key_t, weight_t, flow_container_t> {
         }
 
     public:
-        Edge(Edge<flow_key_t, weight_t, flow_container_t> const& edge) {
+        Edge(Edge const& edge) noexcept {
             *this = edge;
         }
 
@@ -80,7 +88,8 @@ class Edge : public Abstract_edge<flow_key_t, weight_t, flow_container_t> {
             ++available_flows_;
         }
 
-        weight_t get_weight() const {
+        // Need to be ref!
+        weight_t const& get_weight() const {
             return weight_;
         }
 
@@ -99,14 +108,14 @@ int test_edge() {
     Edge<float> a, b(2, 3);
 
     b.allocate_flow(2);
-    FTEST((b.get_flows().cbegin())->get() == 2);
+    FTEST(*(b.get_flows().cbegin()) == 2);
     
     Edge<float> c(b);
-    FTEST((c.get_flows().cbegin())->get() == 2);
+    FTEST(*(c.get_flows().cbegin()) == 2);
 
     b.free_flow(2);
     FTEST(b.get_flows().empty());
-    FTEST((c.get_flows().cbegin())->get() == 2);
+    FTEST(*(c.get_flows().cbegin()) == 2);
 
     FTEST(c.get_weight() == 3 and b.get_weight() == 3);
 

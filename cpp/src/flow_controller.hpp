@@ -2,12 +2,12 @@
 #define __FLOW_CONTROLLER_HPP__
 
 #include <unordered_map>
+#include <vector>
 #include <tuple>
 
 #include "include.hpp"
-#include "flow.hpp"
 
-template <typename key_t=uint32_t>
+template <typename key_t=size_t>
 class Key_generator {
     public:
         Key_generator(key_t seed = key_t(1)) : counter_(seed) {}
@@ -33,53 +33,48 @@ class Key_generator {
         static const key_t not_key = 0;
 };
 
-template <class Event_manager, class Topology, class flow_t, class Key, class Flow_container = std::unordered_map<Key, flow_t>, class Key_generator=Key_generator<Key>>
+template <class Event_manager, class Topology, class flow_t, class key_t=size_t, class Flow_container = std::unordered_map<key_t, flow_t>, class Key_generator=Key_generator<key_t>>
 class Flow_controller {
     typedef typename Topology::node_key_t node_key_t;
     typedef typename Topology::edge_key_t edge_key_t;
-    typedef Key key_t;
     public:
         Flow_controller(Topology topology) : topology_(topology),
                                              flows_(),
                                              key_gen_() {
         }
 
-        virtual key_t const& allocate_flow(node_key_t const& src, node_key_t const& dst) {
-            modified_edges_.clear();
-
+        virtual key_t allocate_flow(node_key_t const& src, node_key_t const& dst) {
             // Adding flow to container
             key_t flow_key(key_gen_());
             assert(Key_generator::is_valid_key(flow_key));
             std::pair<typename Flow_container::iterator, bool> pair;
-            try {
-                pair = flows_.emplace(flow_key, topology_.shortest_path(src, dst));
-                assert(pair.second());
-            } catch (No_path_error e) {
-                throw No_path_error();
+
+            typename Topology::path_t shortest_path = topology_.shortest_path(src, dst);
+            if(not shortest_path.empty()) {
+                pair = flows_.emplace(flow_key, shortest_path);
+                assert(pair.second);
             }
 
             // Trying to reserve Edge ressources along the path
-            typename flow_t::container_t::const_iterator it(*(pair.first()).get_nodes().cbegin());
-            typename flow_t::container_t::value_type former_node(*it);
+            typename flow_t::container_t::const_iterator it((*(pair.first)).second.get_edges().cbegin()),
+                                                         end((*(pair.first)).second.get_edges().cend());
 
-            edge_key_t edge_key;
             try {
-                for(++it; it != *(pair.first()).get_nodes().cend(); ++it) {
-                    edge_key = topology_.get_edge_key(former_node, *it);
-                    if (topology_.get_edge_object(edge_key).allocate_flow(flow_key) == 0) {
-                        topology_.set_edge_unavailable(edge_key);
-                    }
-                    modified_edges_.push_back(edge_key);
+                for(; it != end; ++it) {
+                    // Delegated to Edges
+                    // if (topology_.get_edge_object(edge_key).allocate_flow(flow_key) == 0)
+                    //     topology_.set_edge_unavailable(edge_key);
+                    topology_.get_edge_object(*it).allocate_flow(flow_key);
                 }
                 return flow_key;
             } catch (Ressource_allocation_error e) {
                 // Reverting changes if something wrong happened
-                // Should not happen since shortest_path gives allocable edges
-                topology_.set_edge_unavailable(edge_key);
-                for(auto edge_key: modified_edges_) {
-                    topology_.get_edge_object(edge_key).free_flow(flow_key);
+                // Should not happen since shortest_path returns allocable edges
+                typename flow_t::container_t::const_iterator it2((*(pair.first)).second.get_edges().cbegin());
+                for(; it2 != it; ++it2) {
+                    topology_.get_edge_object(*it2).free_flow(flow_key);
                 }
-                flows_.erase(pair.first());
+                flows_.erase(pair.first);
                 return Key_generator::no_key();
             }
         }
@@ -90,39 +85,63 @@ class Flow_controller {
                 throw Not_registered_flow();
             }
 
-            typename flow_t::container_t::const_iterator it(*(iter.second()).get_nodes().cbegin());
-            typename flow_t::container_t::value_type former_node(*it);
+            typename flow_t::container_t::const_iterator it((*iter).second.get_edges().cbegin()),
+                                                         end((*iter).second.get_edges().cend());
 
             // freeing edges in flow
-            for(++it; it != *(iter.second()).get_nodes().cend(); ++it) {
-                edge_key_t const& edge_key(topology_.get_edge_key(former_node, *it));
-                    topology_.free_edge(edge_key, flow_key);
+            for(; it != end; ++it) {
+                topology_.get_edge_object(*it).free_flow(flow_key);
             }
         }
 
-        virtual void entry_nodes_iter() const {
-            // Use std::pair
-        }
-        
     private:
         Topology topology_;
         Flow_container flows_;
         Key_generator key_gen_;
-        std::vector<edge_key_t const&> modified_edges_;
 };
 
 #endif
 
 #if TEST
 
-#include "event.hpp"
+class FooEdge {
+    public:
+    void free_flow(size_t) {}
+    void allocate_flow(size_t) {}
+};
 
 class FooTopology{
+    public:
+        typedef size_t node_key_t;
+        typedef size_t edge_key_t;
+        typedef std::vector<edge_key_t> path_t;
+        
+        path_t shortest_path(node_key_t const & src, node_key_t const& dst) {
+            path_t path = {src, dst};
+            return path;
+        }
+        FooEdge & get_edge_object(edge_key_t const&){
+            return f;
+        }
+        FooEdge f;
+};
+
+class FooEvent_manager {
+};
+
+template<class edge_key_t>
+class FooFlow {
+    public:
+        typedef std::vector<edge_key_t> container_t;
+        FooFlow(container_t) {}
+        container_t get_edges() {
+            return container_t();
+        }
 };
 
 int main() {
     FooTopology topo;
-    Flow_controller<Event_manager<>, FooTopology, Flow<>, uint32_t> fc();
+    Flow_controller<FooEvent_manager, FooTopology, FooFlow<size_t>, uint32_t> fc(topo);
     return EXIT_SUCCESS;
 }
 
