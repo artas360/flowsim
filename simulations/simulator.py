@@ -126,6 +126,8 @@ if("analyze" in args.action):
     assert (len(results) != 0)
 
     runs_per_rate = len(results[results.keys()[0]])
+    for res in results:
+        print results[res]
 
 #    for rate in results:
 #        print(rate, sum([results[rate][run]['Blocking_rate']\
@@ -139,11 +141,57 @@ if("analyze" in args.action):
     for rate in results:
         points.append(((rate[0]/rate[1]),
                       (UCL([results[rate][run]['Blocking_rate']
-                            for run in range(runs_per_rate)]))))
+                            for run in range(runs_per_rate)])),
+                      (UCL([results[rate][run]['mean_nodes_per_flow']
+                            for run in range(runs_per_rate)])),
+                      (UCL([(1 - results[rate][run]['Blocking_rate']) *\
+                            (rate[0]/rate[1])
+                            for run in range(runs_per_rate)])),
+                      ))
     points.sort(key=lambda x: x[0])
     x = [p[0] for p in points]
     y = [p[1] for p in points]
-    plt.plot(x, [p[0] for p in y], marker='o', color='b')
-    [plt.errorbar(x[i], y[i][0], yerr=y[i][1], ecolor='r')
+    hops = [p[2] for p in points]
+    throuput = [p[3] for p in points]
+
+    # Plotting
+    fig = plt.figure()
+    ax = fig.add_subplot(111)    # The big subplot
+    ax1 = fig.add_subplot(311)
+    ax2 = fig.add_subplot(312)
+    ax3 = fig.add_subplot(313)
+
+    # Turn off axis lines and ticks of the big subplot
+    #ax.spines['top'].set_color('none')
+    #ax.spines['bottom'].set_color('none')
+    #ax.spines['left'].set_color('none')
+    #ax.spines['right'].set_color('none')
+    #ax.tick_params(labelcolor='w', top='off', bottom='off', left='off', right='off')
+    fig.delaxes(ax)
+
+    # Data
+    # ax1.set_yscale('log')
+    ax1.plot(x, [p[0] for p in y], marker='o', color='b', label='BR=f(rho)')
+    [ax1.errorbar(x[i], y[i][0], yerr=y[i][1], ecolor='r')
         for i in range(len(x))]
+
+    # ax2.set_yscale('log')
+    ax2.plot(x, [p[0] for p in throuput], marker='o', color='b', label='throughput=f(rho)')
+    [ax2.errorbar(x[i], throuput[i][0], yerr=throuput[i][1], ecolor='r')
+        for i in range(len(x))]
+
+    # ax3.set_yscale('log')
+    ax3.plot(x, [p[0] for p in hops], marker='o', color='b', label='Hops=f(rho)')
+    [ax3.errorbar(x[i], hops[i][0], yerr=hops[i][1], ecolor='r')
+        for i in range(len(x))]
+
+    # Set labels
+    # ax.set_title('')
+    ax1.set_xlabel('Use rate')
+    ax1.set_ylabel('Blocking Rate')
+    ax2.set_xlabel('Use rate')
+    ax2.set_ylabel('Throughput')
+    ax3.set_xlabel('Use rate')
+    ax3.set_ylabel('Mean Hops')
+
     plt.show()
