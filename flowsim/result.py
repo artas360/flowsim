@@ -22,8 +22,11 @@ class Result(object):
         self.convergence[key]['samples'] =\
             [float('-inf') for i in xrange(self.check_samples)]
         self.convergence[key]['trigger_type'] = trigger_type
-        self.convergence[key]['last_check_count'] =\
-            self.data['general']['event_counter'][trigger_type]
+        try:
+            self.convergence[key]['last_check_count'] =\
+                self.data['general']['event_counter'][trigger_type]
+        except KeyError:
+            self.data['general']['event_counter'][trigger_type] = 0
 
     def increase_event_counter(self, key, node='general'):
         try:
