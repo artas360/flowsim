@@ -64,7 +64,7 @@ class Event_manager:
 
             if counter == self.convergence_check_interval:
                 has_converged =\
-                    self.result.check_mean_convergence('Blocking_rate')
+                    self.result.check_convergence('Blocking_rate', Flow_allocation_failure_Event, 100)
                 counter = 0
             counter = counter + 1
         self.process_results()
