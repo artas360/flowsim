@@ -74,6 +74,12 @@ class Topology(networkx.DiGraph):
         except networkx.NetworkXNoPath:
             raise NoPathError
 
+    def unweighted_shortest_path_length(self, node1, node2):
+        try:
+            return networkx.shortest_path_length(self, node1, node2)
+        except networkx.NetworkXNoPath:
+            return 0
+
     def build_topology_from_int(self, nodes, edges,
                                 arrival_rate=None, service_rate=None):
         # nodes -> list of int or list of (int, str) str->entry,exit

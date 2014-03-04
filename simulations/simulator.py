@@ -53,8 +53,10 @@ parser.add_argument('--arrival-rate-range', nargs=3, default=[.1, 1., .1],
 parser.add_argument('--service-rate-range', nargs=3, default=[.1, .2, .1],
                     help="""arrival rate: first last range\n
                     Last is not is the range""", type=float)
-parser.add_argument('--torus3D', type=int, nargs=3, default=[16, 16, 16],
-                    help="""Run on topology torus 3D with given dimensions""")
+parser.add_argument('--torus2D', type=int, nargs=2,
+                    help="""Run on topology torus2D with given dimensions""")
+parser.add_argument('--torus3D', type=int, nargs=3,
+                    help="""Run on topology torus3D with given dimensions""")
 parser.add_argument('-o', type=str, dest='filename',
                     default='simulation-'+timestr+'.result',
                     help="""File to use for reading/writing results""")
@@ -74,7 +76,18 @@ if('run' in args.action):
     arrival_rate = [f for f in float_range(*args.arrival_rate_range)]
     service_rate = [f for f in float_range(*args.service_rate_range)]
 
-    (nodes, edges) = torus3D(*args.torus3D)
+    if "torus2D" in args and args.torus2D is not None:
+        print("Using Torus 2D")
+        topology_generator = torus2D
+        params = args.torus2D
+    elif "torus3D" in args and args.torus3D is not None:
+        print("Using Torus 3D")
+        topology_generator = torus3D
+        params = args.torus3D
+    else:
+        raise ValueError("No topology specified")
+
+    (nodes, edges) = topology_generator(*params)
 
     waiting_delay = 1
 
@@ -126,8 +139,6 @@ if("analyze" in args.action):
     assert (len(results) != 0)
 
     runs_per_rate = len(results[results.keys()[0]])
-    for res in results:
-        print results[res]
 
 #    for rate in results:
 #        print(rate, sum([results[rate][run]['Blocking_rate']\
@@ -144,10 +155,9 @@ if("analyze" in args.action):
                             for run in range(runs_per_rate)])),
                       (UCL([results[rate][run]['mean_nodes_per_flow']
                             for run in range(runs_per_rate)])),
-                      (UCL([(1 - results[rate][run]['Blocking_rate']) *\
+                      (UCL([(1 - results[rate][run]['Blocking_rate']) *
                             (rate[0]/rate[1])
-                            for run in range(runs_per_rate)])),
-                      ))
+                            for run in range(runs_per_rate)]))))
     points.sort(key=lambda x: x[0])
     x = [p[0] for p in points]
     y = [p[1] for p in points]
@@ -156,34 +166,51 @@ if("analyze" in args.action):
 
     # Plotting
     fig = plt.figure()
+    fig2 = plt.figure()
     ax = fig.add_subplot(111)    # The big subplot
+    ay = fig2.add_subplot(111)    # The big subplot
     ax1 = fig.add_subplot(311)
     ax2 = fig.add_subplot(312)
     ax3 = fig.add_subplot(313)
+    ax4 = fig2.add_subplot(311)
 
     # Turn off axis lines and ticks of the big subplot
-    #ax.spines['top'].set_color('none')
-    #ax.spines['bottom'].set_color('none')
-    #ax.spines['left'].set_color('none')
-    #ax.spines['right'].set_color('none')
-    #ax.tick_params(labelcolor='w', top='off', bottom='off', left='off', right='off')
     fig.delaxes(ax)
+    fig2.delaxes(ay)
 
     # Data
     # ax1.set_yscale('log')
-    ax1.plot(x, [p[0] for p in y], marker='o', color='b', label='BR=f(rho)')
+    ax1.plot(x,
+             [p[0] for p in y],
+             marker='o',
+             color='b',
+             label='BR=f(rho)')
     [ax1.errorbar(x[i], y[i][0], yerr=y[i][1], ecolor='r')
         for i in range(len(x))]
 
     # ax2.set_yscale('log')
-    ax2.plot(x, [p[0] for p in throuput], marker='o', color='b', label='throughput=f(rho)')
+    ax2.plot(x,
+             [p[0] for p in throuput],
+             marker='o',
+             color='b',
+             label='throughput=f(rho)')
     [ax2.errorbar(x[i], throuput[i][0], yerr=throuput[i][1], ecolor='r')
         for i in range(len(x))]
 
     # ax3.set_yscale('log')
-    ax3.plot(x, [p[0] for p in hops], marker='o', color='b', label='Hops=f(rho)')
+    ax3.plot(x,
+             [p[0] for p in hops],
+             marker='o',
+             color='b',
+             label='Hops=f(rho)')
     [ax3.errorbar(x[i], hops[i][0], yerr=hops[i][1], ecolor='r')
         for i in range(len(x))]
+
+    ax4.plot(x,
+             [hops[i][0] * throuput[i][0] for i in range(len(x))],
+             marker='o',
+             color='b',
+             label='Hops=f(rho)')
 
     # Set labels
     # ax.set_title('')

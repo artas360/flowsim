@@ -68,7 +68,12 @@ class Arrival_Event(Event):
         except NoPathError:
             # Generating Flow_allocation_failure_Event
             self.event_manager.add_event(Flow_allocation_failure_Event,
-                                         self.event_issuer)
+                                         self.event_issuer,
+                                         inter_node_distance=
+                                         self.event_manager.
+                                         get_flow_controller().
+                                         get_absolute_distance(src_node,
+                                                               dst_node))
         else:
             # Generating End_flow_event
             assert flow is not None
@@ -123,3 +128,11 @@ class Flow_allocation_failure_Event(Event):
     def __init__(self, event_manager, event_issuer, **kwargs):
         super(self.__class__, self).__init__(event_manager, event_issuer)
         self.delay_before_handling = float('-inf')  # Immediate handling
+        self.distance = kwargs.pop('inter_node_distance', 0)
+
+    def update_result(self):
+        self.result.update_computed_value('mean_nodes_refures_flow',
+                                          self.distance,
+                                          None,
+                                          None,
+                                          event_type=self.__class__)

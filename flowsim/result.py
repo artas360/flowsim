@@ -38,8 +38,8 @@ class Result(object):
     def check_convergence(self, key, trigger_type, expected_diff):
         try:
             if abs(self.data['general']['event_counter'][trigger_type] -
-                self.convergence[key]['last_check_count']) >=\
-                expected_diff:
+                   self.convergence[key]['last_check_count']) >=\
+                    expected_diff:
                     return self.check_mean_convergence(key)
         except KeyError:
             self.init_convergence_data(key, trigger_type)
@@ -110,7 +110,8 @@ class Result(object):
         try:
             cntr = self.convergence[key]['counter']
         except KeyError:
-            self.init_convergence_data(key, self.convergence[key]['trigger_type'])
+            self.init_convergence_data(key,
+                                       self.convergence[key]['trigger_type'])
         self.convergence[key]['samples'][cntr] =\
             self.process_node_value(key, lambda x: float(sum(x)) / len(x))
         self.convergence[key]['last_check_count'] =\

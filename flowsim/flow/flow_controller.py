@@ -41,6 +41,9 @@ class Flow_controller(object):
             self.flows.append(flow)
             return flow
 
+    def get_absolute_distance(self, node1, node2):
+        return self.topology.unweighted_shortest_path_length(node1, node2)
+
     def free_flow(self, flow):
         try:
             self.flows.remove(flow)
