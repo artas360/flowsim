@@ -58,7 +58,6 @@ parser.add_argument('--torus2D', type=int, nargs=2,
 parser.add_argument('--torus3D', type=int, nargs=3,
                     help="""Run on topology torus3D with given dimensions""")
 parser.add_argument('-o', type=str, dest='filename',
-                    default='simulation-'+timestr+'.result',
                     help="""File to use for reading/writing results""")
 parser.add_argument('action', metavar="ACTION", nargs='+', default='run',
                     help="""run: run new simulation\n
@@ -80,10 +79,12 @@ if('run' in args.action):
         print("Using Torus 2D")
         topology_generator = torus2D
         params = args.torus2D
+        name_suffix = "_torus_"+"_".join(map(str, params))
     elif "torus3D" in args and args.torus3D is not None:
         print("Using Torus 3D")
         topology_generator = torus3D
         params = args.torus3D
+        name_suffix = "_torus_"+"_".join(map(str, params))
     else:
         raise ValueError("No topology specified")
 
@@ -118,7 +119,11 @@ if('run' in args.action):
             results[(a_rate, s_rate)] = [deepcopy(d) for d in shared_dicts]
 
     # Dumping results
-    result_file = open(args.filename, 'w')
+    if not "filename" in args or args.filename is None:
+        filename = 'simulation-'+timestr+name_suffix+'.result'
+    else:
+        filename = args.filename
+    result_file = open(filename, 'w')
     dump(results, result_file, -1)
     result_file.close()
 
