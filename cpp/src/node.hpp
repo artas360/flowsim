@@ -78,6 +78,10 @@ class Node : public Abstract_node<rate_t, name_t, id_t> {
 template<>
 size_t Node<>::counter_ = 0;
 
+#endif
+
+#if TEST_NODE
+
 int test_node() {
     Node<> a, b(.1, .2, "bolt"), c(b), d(.3, .4);
 

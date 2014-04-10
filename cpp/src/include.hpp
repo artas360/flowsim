@@ -6,6 +6,14 @@
 
 #include "exception.hpp"
 
+
+#if TEST
+
+#include <iostream>
+
+#endif
+
+
 #if SILENT_TEST
 
 #define FTEST(b) if(not (b)) {return EXIT_FAILURE;}

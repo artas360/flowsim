@@ -13,6 +13,7 @@ GEN_EXCEPTION(Edge_allocation_error)
 GEN_EXCEPTION(No_path_error)
 GEN_EXCEPTION(Ressource_allocation_error)
 GEN_EXCEPTION(Not_registered_flow)
+GEN_EXCEPTION(Not_registered_value)
 GEN_EXCEPTION(Not_implemented_yet)
 
 #endif
