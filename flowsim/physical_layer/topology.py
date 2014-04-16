@@ -76,6 +76,7 @@ class Topology(networkx.DiGraph):
 
     def build_topology_from_int(self, nodes, edges,
                                 arrival_rate=None, service_rate=None):
+        # Node identifier is number !
         # nodes -> list of int or list of (int, str) str->entry,exit
         # edges -> list of (node1, node2) or (node1, node2, capacity)
         # or (node1, node2, capacity, weight)
@@ -93,6 +94,8 @@ class Topology(networkx.DiGraph):
                     raise TypeError
             if type(node) == dict:
                 node_type = node.pop('type', '')
+                if not 'number' in node:
+                    node['number'] = Node.counter
                 if not 'name' in node:
                     node['name'] = node['number']
                 if not 'arrival_rate' in node:

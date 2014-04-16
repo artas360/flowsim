@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Flowsim SYSTEM "Flowsim_config.dtd">
+<Flowsim datetime="2014-04-15 10:09" version="develop">
+	<Simulation>
+		<Stop_condition condition_type="time" condition_value="1500"/>
+		<!--Stop_condition condition_type="convergence" condition_value="blocking_rate"/-->
+	</Simulation>
+	<Events>
+		<Event type="" event_target="" trigger_type="" trigger_value=""/>
+	</Events>
+	<Topology>
+		<Nodes>
+			<Default name=""/>
+			<Node id="0" name="node85" arrival_rate=".3" service_rate=".4"/>
+			<Node id="1" name="node86" arrival_rate=".3" service_rate=".4"/>
+		</Nodes>
+		<Links>
+			<Default weight="1." capacity="1" unidirectional="True"/>
+			<Link source_id="0" destination_id="1" weight="1" capacity="1" unidirectional="True"/>
+			<Link source_id="1" destination_id="0" weight="1" capacity="2" unidirectional="True"/>
+		</Links>
+	</Topology>
+</Flowsim>
