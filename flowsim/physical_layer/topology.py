@@ -76,7 +76,7 @@ class Topology(networkx.DiGraph):
 
     def build_topology_from_int(self, nodes, edges,
                                 arrival_rate=None, service_rate=None):
-        # Node identifier is number !
+        # Node identifier is _id, name is just for plots !
         # nodes -> list of int or list of (int, str) str->entry,exit
         # edges -> list of (node1, node2) or (node1, node2, capacity)
         # or (node1, node2, capacity, weight)
@@ -85,19 +85,27 @@ class Topology(networkx.DiGraph):
 
         # TODO nodes.sort()
         for node in nodes:
-            if type(node) == int:
-                node = {'number': node}
+            if type(node) == int or type(node) == str:
+                node = {'_id': node}
             elif type(node) == tuple or type(node) == list:
                 if len(node) == 2:
-                    node = {'number': node[0], 'type': node[1]}
+                    node = {'_id': node[0], 'type': node[1]}
                 else:
                     raise TypeError
+            elif type(node) == dict:
+                pass
+            else:
+                raise TypeError("Unsuported node description type, " + str(type(node)))
             if type(node) == dict:
                 node_type = node.pop('type', '')
-                if not 'number' in node:
-                    node['number'] = Node.counter
+                if not '_id' in node:
+                    try:
+                        node['_id'] = node['name']
+                    except KeyError:
+                        raise ValueError("Invalid Node, should have an _id or name")
+
                 if not 'name' in node:
-                    node['name'] = node['number']
+                    node['name'] = node['_id']
                 if not 'arrival_rate' in node:
                     node['arrival_rate'] = arrival_rate
                 if not 'service_rate' in node:
@@ -110,9 +118,9 @@ class Topology(networkx.DiGraph):
                     self.exit_nodes.append(new_node)
                 else:
                     new_node = Node(**node)
-                if node['name'] in temp_dict:
+                if node['_id'] in temp_dict:
                     raise DuplicatedNodeError
-                temp_dict[node['name']] = new_node
+                temp_dict[node['_id']] = new_node
                 self.add_node(new_node)
             else:
                 raise TypeError
@@ -222,7 +230,7 @@ def torus3D(x, y, z):
 def draw_graph(topology):
     import matplotlib.pyplot
     pos = networkx.spring_layout(topology)
-    node_labels = dict([(u, u.number) for u in topology.nodes_iter()])
+    node_labels = dict([(u, u.get_name()) for u in topology.nodes_iter()])
     networkx.draw(topology, pos=pos, hold=True, with_labels=False)
     networkx.draw_networkx_labels(topology, pos, labels=node_labels)
     matplotlib.pyplot.draw()

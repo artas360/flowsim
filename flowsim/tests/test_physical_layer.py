@@ -26,14 +26,11 @@ class Test_node(unittest.TestCase):
 
     def test_init(self):
         nodes =\
-            [Node(self.arrival_rate, self.service_rate) for i in range(3)] +\
-            [Node(self.arrival_rate, self.service_rate, 6)] +\
-            [Node(self.arrival_rate, self.service_rate),
-             Node(self.arrival_rate, self.service_rate, -1)]
-        assert set(map(int, nodes)) == set([0, 1, 2, 6, 7, 8])
+            [Node(self.arrival_rate, self.service_rate, i) for i in range(3)]
+        assert set(map(int, nodes)) == set([0, 1, 2])
 
     def test_reset(self):
-        node = Node(self.arrival_rate, self.service_rate)
+        node = Node(self.arrival_rate, self.service_rate, 0)
         assert (node.get_arrival_rate() == self.arrival_rate)
         assert (node.get_service_rate() == self.service_rate)
         node.reset()
@@ -44,15 +41,14 @@ class Test_node(unittest.TestCase):
         assert (node.get_service_rate() == .2)
 
     def test_copy(self):
-        node1 = Node(1.2, 1.3)
+        node1 = Node(1.2, 1.3, 0)
         node2 = node1.copy()
 
         assert(not node1 is node2)
         assert(node1.arrival_rate == node2.arrival_rate and
                node1.service_rate == node2.service_rate and
-               node1.number == node2.number and
+               node1._id == node2._id and
                node1.name == node2.name)
-        assert (Node.counter == 1)
 
 
 class Test_edge(unittest.TestCase):
@@ -119,7 +115,7 @@ class Test_topology(unittest.TestCase):
 
     def test_copy(self):
         topo = Topology()
-        n1, n2 = (Node(.1, .2), Node(.3, .4))
+        n1, n2 = (Node(.1, .2, 0), Node(.3, .4, 1))
         edge = Edge()
         topo.add_nodes([n1, n2])
         topo.add_edge(n1, n2, edge, 3)
@@ -139,22 +135,22 @@ class Test_topology(unittest.TestCase):
 
     def test_add_node(self):
         top = Topology()
-        node = Node(self.arrival_rate, self.service_rate)
+        node = Node(self.arrival_rate, self.service_rate, 0)
         top.add_node(node)
         assert node in top.nodes()
 
     def test_add_nodes(self):
         top = Topology()
-        nodes = [Node(self.arrival_rate, self.service_rate),
-                 Node(self.arrival_rate, self.service_rate)]
+        nodes = [Node(self.arrival_rate, self.service_rate, 0),
+                 Node(self.arrival_rate, self.service_rate, 1)]
         top.add_nodes(nodes)
         for node in nodes:
             assert node in top.nodes()
 
     def test_add_edge(self):
         top = Topology()
-        node1 = Node(self.arrival_rate, self.service_rate)
-        node2 = Node(self.arrival_rate, self.service_rate)
+        node1 = Node(self.arrival_rate, self.service_rate, 0)
+        node2 = Node(self.arrival_rate, self.service_rate, 1)
         edge = Edge()
 
         top.add_edge(node1, node2, edge)
@@ -167,7 +163,7 @@ class Test_topology(unittest.TestCase):
 
     def test_add_edges(self):
         topo = Topology()
-        nodes = [Node(self.arrival_rate, self.service_rate) for i in range(4)]
+        nodes = [Node(self.arrival_rate, self.service_rate, 0) for i in range(4)]
         edges = [Edge() for i in range(3)]
         topo.add_edges([(nodes[0], nodes[1], {'object': edges[0]}),
                        (nodes[1], nodes[2], {'object': edges[1]}),
@@ -287,9 +283,9 @@ class Test_topology(unittest.TestCase):
             set(['n1', 'n2'])
 
         topo = Topology()
-        # Node by name {'name', 'number'}
-        nodes = [{'name': 'n1', 'number': 2}, {'name': 'n2', 'number': 3}]
-        edges = [('n1', 'n2')]
+        # Node by name {'name', '_id'}
+        nodes = [{'name': 'n1', '_id': 2}, {'name': 'n2', '_id': 3}]
+        edges = [(2, 3)]
         topo.build_topology_from_int(nodes, edges,
                                      self.arrival_rate,
                                      self.service_rate)
@@ -297,14 +293,14 @@ class Test_topology(unittest.TestCase):
             set(['n1', 'n2'])
 
         topo = Topology()
-        # Node by name {'name', 'number'}
-        nodes = [{'name': 'n1', 'number': 2}, {'name': 'n2', 'number': 2}]
-        edges = [('n1', 'n2')]
-        topo.build_topology_from_int(nodes, edges,
-                                     self.arrival_rate,
-                                     self.service_rate)
-        assert set(map(lambda x: x.get_name(), topo.nodes())) ==\
-            set(['n1', 'n2'])
+        # Node by name {'name', '_id'}
+        nodes = [{'name': 'n1', '_id': 2}, {'name': 'n2', '_id': 2}]
+        edges = [(2, 3)]
+        self.assertRaises(DuplicatedNodeError, 
+                          topo.build_topology_from_int, 
+                          nodes, edges,
+                          self.arrival_rate,
+                          self.service_rate)
 
         topo = Topology()
         # Edge (node, node, capacity)
@@ -326,14 +322,14 @@ class Test_topology(unittest.TestCase):
         assert topo[nodes[0]][nodes[1]]['weight'] == 3
 
         topo = Topology()
-        # Node by name {'name', 'number'}
-        nodes = [{'name': 'n1', 'number': 2}, {'name': 'n2', 'number': 2}]
+        # Node by name {'name', '_id'}
+        nodes = [{'name': 'n1', '_id': 2}, {'name': 'n2', '_id': 2}]
         edges = [{'nodes': ('n1', 'n2')}]
-        topo.build_topology_from_int(nodes, edges,
-                                     self.arrival_rate,
-                                     self.service_rate)
-        assert set(map(lambda x: x.get_name(), topo.edges()[0])) ==\
-            set(['n1', 'n2'])
+        self.assertRaises(DuplicatedNodeError, 
+                          topo.build_topology_from_int, 
+                          nodes, edges,
+                          self.arrival_rate,
+                          self.service_rate)
 
     def test_import_topology(self):
         filename = './graph0_yed.graphml'
@@ -387,7 +383,7 @@ class Test_topology(unittest.TestCase):
     def test_reset(self):
         topo = Topology()
 
-        n = [Node(.1, .2), Node(.2, .3)]
+        n = [Node(.1, .2, 0), Node(.2, .3, 1)]
         e = Edge()
 
         topo.add_nodes([n[0], n[1]])
