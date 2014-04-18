@@ -18,6 +18,7 @@
 	event_target IDREF #IMPLIED
 	trigger_type CDATA #REQUIRED
 	trigger_value CDATA #REQUIRED
+	effect_value CDATA #IMPLIED
 >
 <!ELEMENT Topology (Nodes, Links)>
 <!ELEMENT Nodes (Default?, Node+)>

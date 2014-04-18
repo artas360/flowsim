@@ -1,5 +1,6 @@
 import xml.dom.minidom as minidom
 from xml.parsers.expat import ExpatError
+from flowsim.flowsim_exception import WrongConfig
 
 
 def expand_list_of_list(l):
@@ -25,10 +26,10 @@ class Config:
 	   try:
 	  	self.xml_config = minidom.parse(xmlFile)
 	   except ExpatError:
-	  	raise
+	  	raise WrongConfig
 	   except IOError as ioErr:
 	  	print ("(FF)", ioErr)
-		raise
+		raise WrongConfig
 
     def get_optional_attribute(self, xml_element, attribute_name, default_dict):
         if(not xml_element.getAttribute(attribute_name) == ''):

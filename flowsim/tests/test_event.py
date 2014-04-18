@@ -62,13 +62,13 @@ class Test_Event_manager(unittest.TestCase):
 
         event_manager.add_event(End_flow_Event,
                                 Node(),
-                                delay=1234,
+                                handling_time=1234,
                                 issuer_flow=None)
         type_list.append(End_flow_Event)
 
         event_manager.add_event(End_of_simulation_Event,
                                 Node(),
-                                delay=1234)
+                                handling_time=1234)
         type_list.append(End_of_simulation_Event)
 
         event_manager.add_event(Flow_allocation_failure_Event,
@@ -100,6 +100,16 @@ class Test_Event_manager(unittest.TestCase):
 
         [type_list.index(type(event)) for event in event_manager.event_list]
 
+    def test_user_event_types(self):
+        user_event = {"type":"arrival_burst_event",
+                      "trigger_type":"time",
+                      "trigger_value":"15",
+                      "event_target":"1",  # this is a node _id
+                      "effect_value":".6"}
+        event_manager = Event_manager(Simu(), self.rand_gen, [user_event])
+        print event_manager.event_list
+
+
     def test_flow_allocation_failure(self):
         event_manager = Event_manager(Simu(), self.rand_gen)
         event_manager.set_flow_controller(Flow_controller())
@@ -122,5 +132,5 @@ class Test_Event_manager(unittest.TestCase):
         type_list = self.create_events(event_manager)
 
         for i in xrange(len(event_manager.event_list)-1):
-            assert event_manager.event_list[i].delay_before_handling >=\
-                event_manager.event_list[i].delay_before_handling
+            assert event_manager.event_list[i].handling_time >=\
+                event_manager.event_list[i].handling_time

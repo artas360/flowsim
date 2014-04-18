@@ -14,6 +14,10 @@ class NoSuchEdge(Exception):
     pass
 
 
+class NoSuchNode(Exception):
+    pass
+
+
 class DuplicatedNodeError(Exception):
     pass
 
@@ -28,3 +32,9 @@ class LoopError(Exception):
 
 class EdgeAllocationError(Exception):
     pass
+
+
+class WrongConfig(Exception):
+    pass
+
+

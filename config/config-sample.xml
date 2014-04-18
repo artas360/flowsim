@@ -6,7 +6,7 @@
 		<!--Stop_condition condition_type="convergence" condition_value="blocking_rate"/-->
 	</Simulation>
 	<Events>
-		<Event type="" event_target="" trigger_type="" trigger_value=""/>
+		<Event type="" event_target="" trigger_type="" trigger_value="" effect_value=""/>
 	</Events>
 	<Topology>
 		<Nodes>

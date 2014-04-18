@@ -3,6 +3,7 @@ class Node(object):
         self._id = _id
         self.name = name if name is not None else self._id
         self.arrival_rate = arrival_rate
+        self.backup_arr_rate = arrival_rate
         self.service_rate = service_rate
 
     def copy(self):
@@ -11,6 +12,7 @@ class Node(object):
         node.name = self.name
         node.arrival_rate = self.arrival_rate
         node.service_rate = self.service_rate
+        node.backup_arr_rate = self.backup_arr_rate
         return node
 
     def __int__(self):
@@ -25,9 +27,20 @@ class Node(object):
     def get_service_rate(self):
         return self.service_rate
 
+    def swap_arr_rate(self, new_rate):
+        if new_rate is None:
+            self.arrival_rate = self.backup_arr_rate
+        elif new_rate > 0:
+            self.arrival_rate = new_rate
+        else:
+            raise ValueError
+
     def reset(self, arrival_rate=None, service_rate=None):
         if arrival_rate is not None:
             self.arrival_rate = arrival_rate
+            self.backup_arr_rate = arrival_rate
+        else:
+            self.arrival_rate = self.backup_arr_rate
         if service_rate is not None:
             self.service_rate = service_rate
 

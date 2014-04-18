@@ -3,13 +3,16 @@
 import unittest
 import networkx
 from flowsim.physical_layer.node import Node
-from flowsim.physical_layer.edge import Edge, EdgeAllocationError
+from flowsim.physical_layer.edge import Edge
+
 from flowsim.physical_layer.topology import Topology
 from flowsim.physical_layer.topology import draw_graph
 from flowsim.physical_layer.topology import torus2D
 from flowsim.physical_layer.topology import torus3D
-from flowsim.physical_layer.topology import NoSuchEdge
-from flowsim.physical_layer.topology import DuplicatedNodeError
+from flowsim.flowsim_exception import NoSuchEdge
+from flowsim.flowsim_exception import NoSuchNode
+from flowsim.flowsim_exception import DuplicatedNodeError
+from flowsim.flowsim_exception import EdgeAllocationError
 
 
 class Flow(object):
@@ -28,6 +31,7 @@ class Test_node(unittest.TestCase):
         nodes =\
             [Node(self.arrival_rate, self.service_rate, i) for i in range(3)]
         assert set(map(int, nodes)) == set([0, 1, 2])
+        self.assertTrue(nodes[0].backup_arr_rate == self.arrival_rate)
 
     def test_reset(self):
         node = Node(self.arrival_rate, self.service_rate, 0)
@@ -46,9 +50,21 @@ class Test_node(unittest.TestCase):
 
         assert(not node1 is node2)
         assert(node1.arrival_rate == node2.arrival_rate and
+               node1.backup_arr_rate == node2.backup_arr_rate and
                node1.service_rate == node2.service_rate and
                node1._id == node2._id and
                node1.name == node2.name)
+
+    def test_swap(self):
+        node1 = Node(1.2, 1.3, 0)
+        node1.swap_arr_rate(None)
+        self.assertTrue(node1.arrival_rate == 1.2)
+        node1.swap_arr_rate(1.4)
+        self.assertTrue(node1.arrival_rate == 1.4)
+        node1.swap_arr_rate(None)
+        self.assertTrue(node1.arrival_rate == 1.2)
+        self.assertRaises(ValueError, node1.swap_arr_rate, -1)
+        self.assertTrue(node1.arrival_rate == 1.2)
 
 
 class Test_edge(unittest.TestCase):
@@ -236,6 +252,23 @@ class Test_topology(unittest.TestCase):
                           nodes[0],
                           nodes[5])
 
+    def test_swap_node_arr_rate(self):
+        topo = Topology()
+        # Node int, edge (int, int)
+        nodes = range(2)
+        edges = [(0, 1)]
+        topo.build_topology_from_int(nodes, edges,
+                                     self.arrival_rate,
+                                     self.service_rate)
+        topo.swap_node_arr_rate(1, 15)
+        self.assertTrue(topo.id_to_node[1].arrival_rate == 15)
+        topo.swap_node_arr_rate(1, 11)
+        self.assertTrue(topo.id_to_node[1].arrival_rate == 11)
+        topo.swap_node_arr_rate(1)
+        self.assertTrue(topo.id_to_node[1].arrival_rate == self.arrival_rate)
+        self.assertRaises(NoSuchNode, topo.swap_node_arr_rate, 5)
+
+
     def test_build_topology_from_int(self):
 
         topo = Topology()
@@ -249,6 +282,10 @@ class Test_topology(unittest.TestCase):
         assert set([frozenset([node1.get_name(), node2.get_name()])
                     for node1, node2 in topo.edges()])\
             == set([frozenset([node1, node2]) for node1, node2 in edges])
+
+        # testing id_to_node dict
+        for node in topo.nodes():
+            self.assertTrue(node is topo.id_to_node[int(node)])
 
         topo = Topology()
         # Node int, edge (int, int)

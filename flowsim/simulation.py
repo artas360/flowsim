@@ -4,6 +4,8 @@ from flowsim.event.event import Event_manager
 from flowsim.physical_layer.topology import Topology
 from flowsim.flow.flow_controller import Flow_controller
 from flowsim.result import Result
+from flowsim.config import Config
+from flowsim.flowsim_exception import WrongConfig
 
 
 class Simulation(object):
@@ -17,6 +19,7 @@ class Simulation(object):
         self.topology = None
 
     def copy(self):
+        print("copy(): Broken functionality, to be removed!")
         sim = Simulation(self.arrival_rate, self.service_rate, self.rand_seed)
         sim.topology = self.topology.copy()\
             if self.topology is not None else None
@@ -25,10 +28,30 @@ class Simulation(object):
         sim.init_flow_controller()
         return sim
 
-    def init_simulation(self, nodes, edges):
+    # Process the conf the local object (not event, topo ...)
+    def process_conf(self, param):
+        pass
+
+    def load_conf(self, filename):
+        try:
+            self.config = Config(open(filename))
+            self.config.read()
+            simualtion_conf = self.config.read_simulation()
+            nodes, edges = self.config.read_topology()
+            event_conf = self.config.read_events()
+
+            self.process_conf(simualtion_conf)
+            self.init_simulation(nodes, edges, event_conf)
+            
+        except IOError:
+            raise
+        except WrongConfig:
+            raise
+
+    def init_simulation(self, nodes, edges, user_events=[]):
         self.init_topology(nodes, edges)
         self.init_random_generator()
-        self.init_event_manager()
+        self.init_event_manager(user_events)
         self.init_flow_controller()
 
     def init_random_generator(self, arrival_generation_function=None,
@@ -38,8 +61,8 @@ class Simulation(object):
                                                  arrival_generation_function,
                                                  duration_function)
 
-    def init_event_manager(self):
-        self.event_manager = Event_manager(self, self.random_generator)
+    def init_event_manager(self, user_events=[]):
+        self.event_manager = Event_manager(self, self.random_generator, user_events)
 
     def init_topology(self, nodes, edges):
         # nodes -> list of int
@@ -73,6 +96,7 @@ class Simulation(object):
         return self.result.get_results()
 
     def reset(self, arrival_rate=None, service_rate=None):
+        print("reset(): Broken functionality, to be removed!")
         self.topology.reset(arrival_rate, service_rate)
         self.init_random_generator()
         self.init_event_manager()
