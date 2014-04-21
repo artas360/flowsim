@@ -22,6 +22,7 @@ class Sample_container(object):
 class Result(object):
     def __init__(self):
         self.results = dict()
+        self.snapshots = dict()
         self.function_map = dict()
         self.convergence_map = dict()
         self.general_key = "general"
@@ -93,6 +94,28 @@ class Result(object):
             if source_object != self.general_key:
                 values.append(self.get(value_name, source_object))
         return process_function(values)
+
+    def take_snapshot(self, snapshot_key, store_snapshot=True):
+        assert(not snapshot_key in self.snapshots)
+        snapshot = dict()
+        for source_object in self.results:
+            snapshot[source_object] = dict()
+            for value_name in self.results[source_object]:
+                # Force necessary reevaluation of computed values
+                snapshot[source_object][value_name] = self.get(value_name, source_object)
+        if store_snapshot:
+            self.snapshots[snapshot_key] = snapshot
+        return snapshot
+
+    def get_snapshot(self, snapshot_key):
+        return self.snapshots.get(snapshot_key, None)
+
+    def get_results(self):
+        ret = {'latest':self.take_snapshot(0, False)}
+        ret.update(self.snapshots)
+        return ret
+
+
 
 def update_mean(submap, new_element, mean_key, denominator_key):
     try:
