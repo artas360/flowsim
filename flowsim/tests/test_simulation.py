@@ -68,6 +68,12 @@ class Test_Simulation(unittest.TestCase):
 
         sim.launch_simulation()
 
+    def test_simulation_file_config(self):
+        sim = Simulation(0.8, 0.9)
+        sim.load_conf("..\..\config\config-sample.xml")
+        res = sim.launch_simulation()
+        # TODO check config propagation
+
     def test_result_simulation(self):
         sim = Simulation(0.9, 0.9)
         sim.init_simulation([0, 1], [(0, 1)])

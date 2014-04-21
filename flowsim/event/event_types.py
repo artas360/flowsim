@@ -164,4 +164,4 @@ class Arrival_burst_event(Event):
 
     def handle_event(self):
         topo = self.event_manager.get_flow_controller().get_topology()
-        topo.swap_node_arr_rate(self.target, self.effect_value)
+        topo.swap_node_arr_rate(self.target, self.new_arrival_rate)

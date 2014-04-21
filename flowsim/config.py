@@ -52,9 +52,9 @@ class Config:
                     dic['name']	        =	str(self.get_optional_attribute(node, 'name', default_attributes))
                     dic['service_rate']	=	float(node.getAttribute('service_rate'))
                     dic['arrival_rate']	=	float(node.getAttribute('arrival_rate'))
-                    dic['number']	=	int(node.getAttribute('id'))
-                    if not dic['number'] in id_list:
-                        id_list.append(dic['number'])
+                    dic['_id']	=	int(node.getAttribute('id'))
+                    if not dic['_id'] in id_list:
+                        id_list.append(dic['_id'])
                         node_list.append(dic)
                     else:
                         print ("(EE) In the xml configuration file, duplicated node. Ignoring it.")
