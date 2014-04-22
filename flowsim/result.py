@@ -72,13 +72,17 @@ class Result(object):
             self.update_computed_value(value_name, source_object, 0)
         return self.results[source_object][value_name]
         
-    def register_convergence(self, value_name, number_samples, epsilon):
-        self.convergence_map[value_name] = Sample_container(number_samples, epsilon)
+    def register_convergence(self, value_name, source_object, number_samples, epsilon):
+        if not source_object in self.convergence_map:
+            self.convergence_map[source_object] = dict()
+        self.convergence_map[source_object][value_name] = Sample_container(number_samples, epsilon)
 
-    def check_convergence(self, value_name, new_sample = None):
-        if new_sample is not None:
-            self.convergence_map[value_name].update_samples(new_sample)
-        return self.convergence_map[value_name].has_converged()
+    def check_convergence(self, value_name, source_object, update_samples=False, new_sample = None):
+        if update_samples and new_sample is None:
+            new_sample = self.get(value_name, source_object)
+        if update_samples and new_sample is not None:
+            self.convergence_map[source_object][value_name].update_samples(new_sample)
+        return self.convergence_map[source_object][value_name].has_converged()
 
     def get(self, value_name, source_object):
         if value_name in self.function_map:
@@ -86,7 +90,7 @@ class Result(object):
         try:
             return self.results[source_object][value_name]
         except KeyError:
-            raise
+            return float('nan')
 
     def process_node_value(self, foo1, foo2, value_name, foo3, process_function):
         values = []
@@ -126,8 +130,8 @@ def update_mean(submap, new_element, mean_key, denominator_key):
     return (submap[mean_key] * (number_of_values - 1) + new_element) / number_of_values
 
 def event_division(submap, foo1, numerator_key, denominator_key):
-    assert(submap[denominator_key] != 0.)
     try:
+        assert(submap[denominator_key] != 0.)
         return submap[numerator_key] / float(submap[denominator_key])
     except KeyError:
         return float('nan')

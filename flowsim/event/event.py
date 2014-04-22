@@ -1,4 +1,4 @@
-from flowsim.result import Result
+from flowsim.result import Result, event_division, update_mean
 from flowsim.random_generator import Random_generator
 from flowsim.event.event_types import *
 
@@ -40,10 +40,9 @@ class Event_manager:
 
         self.elapsed_time = event.get_handling_time()
 
-        # TODO change this
-        # self.result.update_computed_value('time_elapsed',
-        #                                  time_elapsed,
-        #                                  update_function=self.result.sum)
+        self.result.record_value('elapsed_time',
+                                 "general",
+                                 self.elapsed_time)
 
         event.handle_event()
         event.automated_update_result()
@@ -54,43 +53,49 @@ class Event_manager:
         self.event_list.append(Event_type(self, event_issuer, **kwargs))
         self.event_list.sort(key=lambda x: x.get_handling_time(), reverse=True)
 
-    def start_event_processing(self):
-        # print("Starting event processing")
-        has_converged = False
-        counter = 0
+    def init_run(self):
         for node in self.flow_controller.get_entry_nodes():
             self.add_event(Arrival_Event,
                            node,
                            arrival_rate=node.get_arrival_rate(),
                            service_rate=node.get_service_rate())
-            self.result.\
-                add_computed_value('Blocking_rate',
-                                   self.result.event_division,
-                                   {'key_numerator':
-                                    Flow_allocation_failure_Event,
-                                    'key_denominator':
-                                    Arrival_Event})
+        self.result.\
+            add_computed_value('Blocking_rate',
+                                True,
+                                event_division,
+                                Flow_allocation_failure_Event,
+                                Arrival_Event,
+                                True)
+
+        self.result.register_convergence("Blocking_rate",
+                                         "general",
+                                         6,
+                                         1.e-3)
+        for event_type in Event_type_list:
+            event_type.register_new_result(self.result)
+
+    def start_event_processing(self):
+        self.init_run()
+
+        has_converged = False
+        counter = 0
+
         while not self.EOS and not has_converged:
             self.handle_next_event()
 
             if counter == self.convergence_check_interval:
                 has_converged =\
                     self.result.check_convergence('Blocking_rate',
-                                                  Flow_allocation_failure_Event,
-                                                  100)
+                                                  'general',
+                                                  True)
                 counter = 0
-            counter = counter + 1
-        self.process_results()
+            counter += 1
 
     def set_EOS(self):
         self.EOS = True
 
     def set_flow_controller(self, flow_controller):
         self.flow_controller = flow_controller
-
-    def flow_allocation_failure(self, source_node, dest_node):
-        self.add_event(Flow_allocation_failure_Event,
-                       self.flow_controller)
 
     def get_result(self):
         return self.result
@@ -100,10 +105,6 @@ class Event_manager:
 
     def get_elapsed_time(self):
         return self.elapsed_time
-
-    def process_results(self):
-        #self.result.print_results()
-        pass
 
     def new_arrivals(self):
         return not self.simulation.end()

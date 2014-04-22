@@ -1,5 +1,6 @@
 from flowsim.flowsim_exception import NoPathError
 from flowsim.physical_layer.node import Node
+from flowsim.result import update_mean
 
 
 class Triggered_events(object):
@@ -23,11 +24,11 @@ class Event(object):
         return self.handling_time
 
     def automated_update_result(self):
-        self.result.increase_event_counter(self.__class__)
+        self.result.increase_value(self.__class__, "general")
         # TODO : new class NodeEvent
         if isinstance(self.event_issuer, Node):
-            self.result.increase_event_counter(self.__class__,
-                                               self.event_issuer)
+            self.result.increase_value(self.__class__,
+                                       self.event_issuer)
         self.update_result()
 
     def update_result(self):  # To specialize in child class
@@ -38,6 +39,10 @@ class Event(object):
 
     def get_debug(self):
         return [self.__class__, self.handling_time, self.event_end_time]
+
+    @staticmethod
+    def register_new_result(result):
+        pass
 
 
 class Arrival_Event(Event):
@@ -102,7 +107,6 @@ class End_of_simulation_Event(Event):
 
     def handle_event(self):
         self.event_manager.set_EOS()
-        self.event_manager.process_results()
 
 
 class Flow_allocation_success_event(Event):
@@ -111,12 +115,18 @@ class Flow_allocation_success_event(Event):
         self.handling_time = self.immediate_handling()
         self.flow = kwargs.pop('flow')
 
+    @staticmethod
+    def register_new_result(result):
+        result.add_computed_value('mean_hops',
+                                  True,
+                                  update_mean,
+                                  'mean_hops',
+                                  Flow_allocation_success_event)
+
     def update_result(self):
-        self.result.update_computed_value('mean_nodes_per_flow',
-                                          self.flow.length(),
-                                          None,
-                                          None,
-                                          event_type=self.__class__)
+        self.result.update_computed_value('mean_hops',
+                                          "general",
+                                          self.flow.length())
 
 
 class Flow_allocation_failure_Event(Event):
@@ -143,7 +153,7 @@ class User_event_analyzer(object):
             target = int(event_description["event_target"])
             effect_value = float(event_description["effect_value"])
         except:
-            raise ValueError("Bad user event")
+            raise ValueError("Illegal user event")
 
         if event_description["type"] == "arrival_burst_event":
             self.event_manager.add_event(Arrival_burst_event,
@@ -165,3 +175,11 @@ class Arrival_burst_event(Event):
     def handle_event(self):
         topo = self.event_manager.get_flow_controller().get_topology()
         topo.swap_node_arr_rate(self.target, self.new_arrival_rate)
+
+Event_type_list=[Arrival_Event,
+                 End_flow_Event,
+                 End_of_simulation_Event,
+                 Flow_allocation_success_event,
+                 Flow_allocation_failure_Event,
+                 Arrival_burst_event
+                 ]

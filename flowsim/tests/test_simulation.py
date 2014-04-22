@@ -77,7 +77,7 @@ class Test_Simulation(unittest.TestCase):
     def test_result_simulation(self):
         sim = Simulation(0.9, 0.9)
         sim.init_simulation([0, 1], [(0, 1)])
-        res = sim.launch_simulation()
+        res = sim.launch_simulation()['latest']["general"]
         assert (abs(res['Blocking_rate'] - 0.5) < 0.05)
 
     def test_result_simulation2(self):
@@ -86,7 +86,7 @@ class Test_Simulation(unittest.TestCase):
         edges = [(0, 1), (1, 2), (2, 0)]
 
         sim.init_simulation(nodes, edges)
-        res = sim.launch_simulation()
+        res = sim.launch_simulation()['latest']["general"]
         # Is it realy the expected result?
         assert (abs(res['Blocking_rate'] - 0.29) < 0.05)
 

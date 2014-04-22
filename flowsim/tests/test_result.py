@@ -62,17 +62,17 @@ class Test_result(unittest.TestCase):
         self.assertTrue(self.result.process_node_value(None, None, "counter", None, sum) == 16.)
 
     def test_sample_convergence(self):
-        self.assertRaises(KeyError, self.result.check_convergence, "conv")
-        self.result.register_convergence("conv", 3, .1)
-        self.assertFalse(self.result.check_convergence("conv"))
-        self.result.check_convergence("conv", 9)
-        self.assertFalse(self.result.check_convergence("conv"))
-        self.result.check_convergence("conv", 3.1)
-        self.assertFalse(self.result.check_convergence("conv"))
-        self.result.check_convergence("conv", 3)
-        self.assertFalse(self.result.check_convergence("conv"))
-        self.result.check_convergence("conv", 3)
-        self.assertTrue(self.result.check_convergence("conv"))
+        self.assertRaises(KeyError, self.result.check_convergence, "conv", "general")
+        self.result.register_convergence("conv", "general", 3, .1)
+        self.assertFalse(self.result.check_convergence("conv", "general"))
+        self.result.check_convergence("conv", "general", True, 9)
+        self.assertFalse(self.result.check_convergence("conv", "general"))
+        self.result.check_convergence("conv", "general", True, 3.1)
+        self.assertFalse(self.result.check_convergence("conv", "general"))
+        self.result.check_convergence("conv", "general", True, 3)
+        self.assertFalse(self.result.check_convergence("conv", "general"))
+        self.result.check_convergence("conv", "general", True, 3)
+        self.assertTrue(self.result.check_convergence("conv", "general"))
 
     def test_get_results(self):
         self.result.record_value("counter", "node1", 1.)
