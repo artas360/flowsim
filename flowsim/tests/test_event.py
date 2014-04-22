@@ -8,6 +8,7 @@ from flowsim.random_generator import Random_generator
 
 
 class Simu(object):
+
     def __init__(self):
         self.result = Result()
 
@@ -57,42 +58,51 @@ class Test_Event_manager(unittest.TestCase):
         self.rand_gen = Random_generator(Topo(), None)
 
     def create_events(self, event_manager):
-        type_list = []
+        event_count = 0
 
         event_manager.add_event(Arrival_Event,
                                 Node(),
                                 arrival_rate=0.5,
                                 service_rate=0.5)
-        type_list.append(Arrival_Event)
+        event_count += 1
 
         event_manager.add_event(End_flow_Event,
                                 Node(),
                                 handling_time=1234,
                                 issuer_flow=None)
-        type_list.append(End_flow_Event)
+        event_count += 1
 
         event_manager.add_event(End_of_simulation_Event,
                                 Node(),
                                 handling_time=1234)
-        type_list.append(End_of_simulation_Event)
+        event_count += 1
 
         event_manager.add_event(Flow_allocation_failure_Event,
                                 Node())
-        type_list.append(Flow_allocation_failure_Event)
+        event_count += 1
 
         event_manager.add_event(Flow_allocation_success_event,
                                 Node(),
                                 flow=Flow())
-        type_list.append(Flow_allocation_success_event)
+        event_count += 1
 
         event_manager.add_event(Arrival_burst_event,
                                 "User",
                                 handling_time=15.,
                                 target=Node(),
                                 effect_value=.2)
-        type_list.append(Arrival_burst_event)
+        event_count += 1
 
-        return type_list
+        event_manager.add_event(Sample_event,
+                                "User",
+                                handling_time=0,
+                                time_interval=9)
+        event_count += 1
+
+        # Checking that all events are tested
+        self.assertEqual(event_count, len(Event_type_list))
+
+        return Event_type_list
 
     def test_add_event(self):
         event_manager = Event_manager(Simu(), self.rand_gen)
@@ -145,3 +155,15 @@ class Test_Event_manager(unittest.TestCase):
         for i in xrange(len(event_manager.event_list)-1):
             assert event_manager.event_list[i].handling_time >=\
                 event_manager.event_list[i].handling_time
+
+    def test_sample_event(self):
+        event_manager = Event_manager(Simu(), self.rand_gen)
+
+        event_manager.add_event(Sample_event,
+                                "User",
+                                handling_time=0,
+                                time_interval=9)
+
+        event_manager.handle_next_event()
+        event_manager.handle_next_event()
+        self.assertTrue(event_manager.result.snapshots.keys() == [0, 9])

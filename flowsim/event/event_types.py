@@ -152,8 +152,10 @@ class User_event_analyzer(object):
             handling_time = float(event_description["trigger_value"])
             target = int(event_description["event_target"])
             effect_value = float(event_description["effect_value"])
-        except:
-            raise ValueError("Illegal user event")
+        except KeyError:
+            raise KeyError("Illegal user event: missing field")
+        except ValueError:
+            raise ValueError("Illegal user event: wrong type")
 
         if event_description["type"] == "arrival_burst_event":
             self.event_manager.add_event(Arrival_burst_event,
@@ -161,8 +163,27 @@ class User_event_analyzer(object):
                                          handling_time=handling_time,
                                          target=target,
                     					 effect_value=effect_value)
+        elif event_description["type"] == "sample_event":
+            self.event_manager.add_event(Sample_event,
+                                         "User",
+                                         handling_time=handling_time,
+                    					 time_interval=effect_value)
         else:
             raise NotImplemented
+
+
+class Sample_event(Event):
+    def __init__(self, event_manager, event_issuer, **kwargs):
+        super(self.__class__, self).__init__(event_manager, event_issuer)
+        self.handling_time = kwargs.pop("handling_time")
+        self.time_interval = kwargs.pop("time_interval")
+
+    def handle_event(self):
+        self.result.take_snapshot(self.handling_time, True)
+        self.event_manager.add_event(self.__class__,
+                                     self.event_issuer,
+                                     handling_time=self.handling_time + self.time_interval,
+                                     time_interval=self.time_interval)
 
 
 class Arrival_burst_event(Event):
@@ -181,5 +202,6 @@ Event_type_list=[Arrival_Event,
                  End_of_simulation_Event,
                  Flow_allocation_success_event,
                  Flow_allocation_failure_Event,
-                 Arrival_burst_event
+                 Arrival_burst_event,
+                 Sample_event
                  ]

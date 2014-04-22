@@ -115,7 +115,7 @@ class Result(object):
         return self.snapshots.get(snapshot_key, None)
 
     def get_results(self):
-        ret = {'latest':self.take_snapshot(0, False)}
+        ret = {'latest':self.take_snapshot(None, False)}
         ret.update(self.snapshots)
         return ret
 
