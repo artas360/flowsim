@@ -3,11 +3,6 @@ from flowsim.physical_layer.node import Node
 from flowsim.result import update_mean
 
 
-class Triggered_events(object):
-    def __init__(self, trigger):
-        self.trigger = trigger
-    # TODO
-
 class Event(object):
     def __init__(self, event_manager, event_issuer, **kwargs):
         self.event_end_time = 0
@@ -40,6 +35,9 @@ class Event(object):
     def get_debug(self):
         return [self.__class__, self.handling_time, self.event_end_time]
 
+    def post_handle(self):
+        pass
+
     @staticmethod
     def register_new_result(result):
         pass
@@ -47,9 +45,9 @@ class Event(object):
 
 class Arrival_Event(Event):
     def __init__(self, event_manager, event_issuer, **kwargs):
-        self.arrival_rate = kwargs.pop('arrival_rate')
-        self.service_rate = kwargs.pop('service_rate')
         super(self.__class__, self).__init__(event_manager, event_issuer)
+        self.arrival_rate = event_issuer.get_arrival_rate()
+        self.service_rate = event_issuer.get_service_rate()
         self.handling_time = self.event_manager.get_elapsed_time() +\
             self.event_manager.random_generator.next_arrival(
                 self.arrival_rate)
@@ -61,9 +59,7 @@ class Arrival_Event(Event):
         if self.event_manager.new_arrivals():
             # Generating next Poisson arrival
             self.event_manager.add_event(self.__class__,
-                                         self.event_issuer,
-                                         arrival_rate=self.arrival_rate,
-                                         service_rate=self.service_rate)
+                                         self.event_issuer)
         #(src_node, dst_node) =\
         #    self.event_manager.random_generator.random_io_nodes()
         src_node = self.event_issuer
@@ -172,7 +168,16 @@ class User_event_analyzer(object):
             raise NotImplemented
 
 
-class Sample_event(Event):
+class User_event(Event):
+    def __init__(self, event_manager, event_issuer):
+        Event.__init__(self, event_manager, event_issuer)
+        self.event_manager.new_user_event()
+
+    def post_handle(self):
+        self.event_manager.handled_user_event()
+
+
+class Sample_event(Event):  # Should not be User_event or infinite loop
     def __init__(self, event_manager, event_issuer, **kwargs):
         super(self.__class__, self).__init__(event_manager, event_issuer)
         self.handling_time = kwargs.pop("handling_time")
@@ -186,7 +191,7 @@ class Sample_event(Event):
                                      time_interval=self.time_interval)
 
 
-class Arrival_burst_event(Event):
+class Arrival_burst_event(User_event):
     def __init__(self, event_manager, event_issuer, **kwargs):
         super(self.__class__, self).__init__(event_manager, event_issuer)
         self.handling_time = kwargs.pop("handling_time")

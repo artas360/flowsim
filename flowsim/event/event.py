@@ -29,7 +29,6 @@ class Event_manager:
                 analyzer.analyze(uevent)
             except:
                 raise
-            self.remaining_user_events += 1
 
     def handle_next_event(self):
         try:
@@ -46,6 +45,7 @@ class Event_manager:
 
         event.handle_event()
         event.automated_update_result()
+        event.post_handle()
 
     def add_event(self, Event_type, event_issuer, **kwargs):
         if not issubclass(Event_type, Event):
@@ -56,9 +56,7 @@ class Event_manager:
     def init_run(self):
         for node in self.flow_controller.get_entry_nodes():
             self.add_event(Arrival_Event,
-                           node,
-                           arrival_rate=node.get_arrival_rate(),
-                           service_rate=node.get_service_rate())
+                           node)
         self.result.\
             add_computed_value('Blocking_rate',
                                 True,
@@ -80,7 +78,8 @@ class Event_manager:
         has_converged = False
         counter = 0
 
-        while not self.EOS and not has_converged:
+        while not self.EOS and \
+            not (has_converged and self.remaining_user_events <= 0):
             self.handle_next_event()
 
             if counter == self.convergence_check_interval:
@@ -90,6 +89,12 @@ class Event_manager:
                                                   True)
                 counter = 0
             counter += 1
+
+    def new_user_event(self):
+        self.remaining_user_events += 1
+
+    def handled_user_event(self):
+        self.remaining_user_events -= 1
 
     def set_EOS(self):
         self.EOS = True

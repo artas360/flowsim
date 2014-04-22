@@ -99,10 +99,14 @@ class Result(object):
                 values.append(self.get(value_name, source_object))
         return process_function(values)
 
-    def take_snapshot(self, snapshot_key, store_snapshot=True):
+    def take_snapshot(self, snapshot_key, store_snapshot=True, generaL_only=True):
         assert(not snapshot_key in self.snapshots)
         snapshot = dict()
-        for source_object in self.results:
+        if generaL_only:
+            keys = [self.general_key]
+        else:
+            keys = self.results.keys()
+        for source_object in keys:
             snapshot[source_object] = dict()
             for value_name in self.results[source_object]:
                 # Force necessary reevaluation of computed values
@@ -111,8 +115,8 @@ class Result(object):
             self.snapshots[snapshot_key] = snapshot
         return snapshot
 
-    def get_snapshot(self, snapshot_key):
-        return self.snapshots.get(snapshot_key, None)
+    def get_snapshots(self):
+        return self.snapshots
 
     def get_results(self):
         ret = {'latest':self.take_snapshot(None, False)}

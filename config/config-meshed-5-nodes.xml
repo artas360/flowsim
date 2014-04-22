@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Flowsim SYSTEM "Flowsim_config.dtd">
+<Flowsim datetime="2014-04-15 10:09" version="develop">
+	<Simulation>
+		<Stop_condition condition_type="time" condition_value="1500"/>
+		<!--Stop_condition condition_type="convergence" condition_value="blocking_rate"/-->
+	</Simulation>
+	<Events>
+		<Event type="arrival_burst_event" event_target="0" trigger_type="time" trigger_value="13000" effect_value=".9"/>
+		<Event type="arrival_burst_event" event_target="1" trigger_type="time" trigger_value="13000" effect_value=".9"/>
+		<Event type="arrival_burst_event" event_target="4" trigger_type="time" trigger_value="13000" effect_value=".9"/>
+		<Event type="sample_event" event_target="0" trigger_type="time" trigger_value="0." effect_value="15"/>
+	</Events>
+	<Topology>
+		<Nodes>
+			<Default name=""/>
+			<Node id="0" name="node0" arrival_rate=".1" service_rate=".9"/>
+			<Node id="1" name="node1" arrival_rate=".1" service_rate=".9"/>
+			<Node id="2" name="node2" arrival_rate=".1" service_rate=".9"/>
+			<Node id="3" name="node3" arrival_rate=".1" service_rate=".9"/>
+			<Node id="4" name="node4" arrival_rate=".1" service_rate=".9"/>
+		</Nodes>
+		<Links>
+			<Default weight="1." capacity="1" unidirectional="True"/>
+			<Link source_id="0" destination_id="1" weight="1" capacity="1" unidirectional="False"/>
+			<Link source_id="0" destination_id="3" weight="1" capacity="1" unidirectional="False"/>
+			<Link source_id="3" destination_id="4" weight="1" capacity="1" unidirectional="False"/>
+			<Link source_id="3" destination_id="2" weight="1" capacity="1" unidirectional="False"/>
+			<Link source_id="1" destination_id="2" weight="1" capacity="1" unidirectional="False"/>
+			<Link source_id="1" destination_id="4" weight="1" capacity="1" unidirectional="False"/>
+		</Links>
+	</Topology>
+</Flowsim>

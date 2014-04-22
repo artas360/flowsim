@@ -33,7 +33,7 @@ class Flow_controller(object):
     def free_flow(self, flow):
         return
 
-    def get_topology():
+    def get_topology(self):
         return Topo()
 
 
@@ -42,6 +42,11 @@ class Node(object):
     def __int__(self):
         return 0
 
+    def get_arrival_rate(self):
+        return .1
+
+    def get_service_rate(self):
+        return .1
 
 class Topo(object):
 
@@ -50,6 +55,9 @@ class Topo(object):
 
     def get_random_exit_node(self, number):
         return Node()
+
+    def swap_node_arr_rate(self, foo1=None, foo2=None):
+        pass
 
 
 class Test_Event_manager(unittest.TestCase):
@@ -109,9 +117,7 @@ class Test_Event_manager(unittest.TestCase):
         event_manager.set_flow_controller(Flow_controller())
 
         event_manager.add_event(Arrival_Event,
-                                event_manager.flow_controller,
-                                arrival_rate=0.5,
-                                service_rate=0.5)
+                                Node())
         assert isinstance(event_manager.event_list.pop(),
                           Arrival_Event)
 
