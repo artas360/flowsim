@@ -112,3 +112,51 @@ class Config:
     def read_simulation(self):
         return self.generic_leaf_read(self.simulation_conf, 'Stop_condition')
         
+def topology2xml(filename, topology):
+    from xml.dom.minidom import Document
+    doc = Document()
+    root = doc.createElement('Flowsim')
+    root.setAttribute('date', 'TODO')
+    root.setAttribute('version', 'TODO')
+    doc.appendChild(root)
+
+    xmltopology = doc.createElement('Topology')
+    root.appendChild(xmltopology)
+
+    xmlnodes = doc.createElement('Nodes')
+    xmltopology.appendChild(xmlnodes)
+    xmlnodedefault = doc.createElement('Default')
+    xmlnodedefault.setAttribute("name", "")
+    xmlnodes.appendChild(xmlnodedefault)
+
+    for node in topology.nodes_iter():
+        xmlnode = doc.createElement('Node')
+        xmlnode.setAttribute('id', str(node._id))
+        xmlnode.setIdAttribute('id')
+        xmlnode.setAttribute('name', str(node.name))
+        xmlnode.setAttribute('arrival_rate', str(node.arrival_rate))
+        xmlnode.setAttribute('service_rate', str(node.service_rate))
+        xmlnodes.appendChild(xmlnode)
+
+    xmledges = doc.createElement('Edges')
+    xmltopology.appendChild(xmledges)
+
+    xmledgedefault = doc.createElement('Default')
+    xmledgedefault.setAttribute("weight", str(1.))
+    xmledgedefault.setAttribute("capacity", str(1))
+    xmledgedefault.setAttribute("unidirectional", str(True))
+    xmledges.appendChild(xmledgedefault)
+
+    for edge in topology.edges(data=True):
+        xmledge = doc.createElement('Edge')
+        xmledge.setAttribute('source_id', str(edge[0]._id))
+        xmledge.setAttribute('destination_id', str(edge[1]._id))
+        xmledge.setAttribute('weight', str(edge[2]['weight']))
+        xmledge.setAttribute('capacity', str(edge[2]['object'].max_flows))
+        # Unidir always True since all edges have been instanciated
+        xmledge.setAttribute('unidirectional', str(True))
+        xmledges.appendChild(xmledge)
+    try:
+        open(filename, 'w').writelines(doc.toprettyxml(indent="  ", encoding="utf-8"))
+    except IOError:
+        raise
