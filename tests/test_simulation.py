@@ -70,7 +70,7 @@ class Test_Simulation(unittest.TestCase):
 
     def test_simulation_file_config(self):
         sim = Simulation(0.8, 0.9)
-        sim.load_conf("..\..\config\config-sample.xml")
+        sim.load_conf("../config/config-sample.xml")
         res = sim.launch_simulation()
         # TODO check config propagation
 
