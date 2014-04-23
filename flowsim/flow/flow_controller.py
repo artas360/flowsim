@@ -55,3 +55,6 @@ class Flow_controller(object):
 
     def handle_flow_allocation_failure(self, source_node, dest_node):
         self.event_manager.flow_allocation_failure(source_node, dest_node)
+
+    def get_topology(self):
+        return self.topology

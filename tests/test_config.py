@@ -7,9 +7,11 @@ class Test_config(unittest.TestCase):
     def setUp(self):
         self.conf = TemporaryFile()
         self.config = Config(self.conf)
+        self.conf.Rclose = self.conf.close
+        self.conf.close = lambda: None
     
     def tearDown(self):
-        self.conf.close()
+        self.conf.Rclose()
         
     def dump_conf(self, conf):
         self.conf.seek(0, 0)
@@ -67,8 +69,8 @@ class Test_config(unittest.TestCase):
         self.dump_conf(conf)
         self.config.read()
         nodes, links = self.config.read_topology()
-        node1 = {"number":0, "name":"node1", "arrival_rate":.3, "service_rate":.4}
-        node2 = {"number":1, "name":"node2", "arrival_rate":.3, "service_rate":.5}
+        node1 = {"_id":0, "name":"node1", "arrival_rate":.3, "service_rate":.4}
+        node2 = {"_id":1, "name":"node2", "arrival_rate":.3, "service_rate":.5}
         self.assertTrue(node1 in nodes and node2 in nodes)
         link1 = {"nodes":(0, 1), "weight":1., "capacity":1, "unidir":True}
         link2 = {"nodes":(1, 0), "weight":9., "capacity":2, "unidir":False}
@@ -95,15 +97,15 @@ class Test_config(unittest.TestCase):
         conf = ['<?xml version="1.0" encoding="UTF-8"?>',
                 '<Flowsim datetime="2014-04-15 10:09" version="test">',
                 '<Simulation>',
-                '<Stop_condition condition_type="time" condition_value="1500"/>',
+                '<Convergence number_samples="15" epsilon="1e-3" check_interval="1e3"/>',
                 '</Simulation>',
                 '</Flowsim>']
         self.dump_conf(conf)
         self.config.read()
         res = self.config.read_simulation()
         self.assertTrue(len(res) == 1)
-        simulation1 = {'condition_type':'time', 'condition_value':'1500'}
-        self.assertTrue(simulation1 == res[0])
+        simulation1 = {'number_samples':'15', 'epsilon':'1e-3', 'check_interval':"1e3"}
+        self.assertTrue(simulation1 == res['Convergence'])
                         
     def test_read_nodes(self):
         conf = ['<?xml version="1.0" encoding="UTF-8"?>',
@@ -121,8 +123,8 @@ class Test_config(unittest.TestCase):
         self.config.read()
         # Reading conf
         nodes, ids = self.config.read_nodes(self.config.topology_conf[0])
-        node1 = {"number":0, "name":"node1", "arrival_rate":.3, "service_rate":.4}
-        node2 = {"number":1, "name":"node2", "arrival_rate":.3, "service_rate":.5}
+        node1 = {"_id":0, "name":"node1", "arrival_rate":.3, "service_rate":.4}
+        node2 = {"_id":1, "name":"node2", "arrival_rate":.3, "service_rate":.5}
         self.assertTrue(node1 == nodes[0] or node1 == nodes[1]) # Not sure about the order :/
         self.assertTrue(node2 == nodes[0] or node2 == nodes[1])
         self.assertTrue(node1 != node2)

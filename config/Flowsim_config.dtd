@@ -5,11 +5,12 @@
 	version CDATA #REQUIRED
 	datetime CDATA #IMPLIED
 >
-<!ELEMENT Simulation (Stop_condition)>
-<!ELEMENT Stop_condition (#PCDATA)>
-<!ATTLIST Stop_condition
-	condition_type CDATA #REQUIRED
-	condition_value CDATA #REQUIRED
+<!ELEMENT Simulation (Convergence?)>
+<!ELEMENT Convergence (#PCDATA)>
+<!ATTLIST Convergence
+	check_interval CDATA #REQUIRED
+	number_samples CDATA #REQUIRED
+	epsilon CDATA #REQUIRED
 >
 <!ELEMENT Events (Event+)>
 <!ELEMENT Event (#PCDATA)>
@@ -18,6 +19,7 @@
 	event_target IDREF #IMPLIED
 	trigger_type CDATA #REQUIRED
 	trigger_value CDATA #REQUIRED
+	effect_value CDATA #IMPLIED
 >
 <!ELEMENT Topology (Nodes, Links)>
 <!ELEMENT Nodes (Default?, Node+)>

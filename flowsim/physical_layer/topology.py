@@ -4,7 +4,8 @@ from edge import Edge
 from node import Node, Entry_node, Exit_node
 from flowsim.flowsim_exception import NoSuchEdge,\
     DuplicatedNodeError,\
-    NoPathError
+    NoPathError,\
+    NoSuchNode
 
 
 class Topology(networkx.DiGraph):
@@ -14,6 +15,7 @@ class Topology(networkx.DiGraph):
         self.entry_nodes = []
         self.exit_nodes = []
         self.infinity = float('inf')
+        self.id_to_node = {}
 
     def copy(self):
         topo = Topology()
@@ -124,6 +126,7 @@ class Topology(networkx.DiGraph):
                 self.add_node(new_node)
             else:
                 raise TypeError
+        self.id_to_node.update(temp_dict)
 
         for edge in edges:
             # TODO duplicated node -> increase capacity?
@@ -170,11 +173,18 @@ class Topology(networkx.DiGraph):
             return self.nodes()[number % self.number_of_nodes()]
         return self.exit_nodes[number % len(self.exit_nodes)]
 
+    def swap_node_arr_rate(self, node__id, new_value=None):
+        try:
+            self.id_to_node[node__id].swap_arr_rate(new_value)
+        except KeyError:
+            raise NoSuchNode
+
     def get_entry_nodes(self):
         return self.entry_nodes if len(self.entry_nodes) > 0 else self.nodes()
 
     def import_topology(self, filename, arrival_rate, service_rate):
         #TODO : catch exceptions
+        print("import_topology(): Deprecated/broken, use config file.")
         g = networkx.read_graphml(filename)
         nodes = [{'name': node,
                   'arrival_rate': arrival_rate,

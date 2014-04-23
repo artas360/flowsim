@@ -1,10 +1,11 @@
 import xml.dom.minidom as minidom
 from xml.parsers.expat import ExpatError
+from flowsim.flowsim_exception import WrongConfig
 
 
 def expand_list_of_list(l):
     return [item for sublist in l for item in sublist]
-    
+
 
 class Config:
     def __init__(self, config_src):
@@ -20,15 +21,19 @@ class Config:
             self.topology_conf += Element.getElementsByTagName('Topology')
             self.event_conf += Element.getElementsByTagName('Events')
             self.simulation_conf += Element.getElementsByTagName('Simulation')
+        try:
+            self.config_src.close()
+        except:
+            pass
 
     def openXML(self, xmlFile):
 	   try:
 	  	self.xml_config = minidom.parse(xmlFile)
 	   except ExpatError:
-	  	raise
+	  	raise WrongConfig
 	   except IOError as ioErr:
 	  	print ("(FF)", ioErr)
-		raise
+		raise WrongConfig
 
     def get_optional_attribute(self, xml_element, attribute_name, default_dict):
         if(not xml_element.getAttribute(attribute_name) == ''):
@@ -51,9 +56,9 @@ class Config:
                     dic['name']	        =	str(self.get_optional_attribute(node, 'name', default_attributes))
                     dic['service_rate']	=	float(node.getAttribute('service_rate'))
                     dic['arrival_rate']	=	float(node.getAttribute('arrival_rate'))
-                    dic['number']	=	int(node.getAttribute('id'))
-                    if not dic['number'] in id_list:
-                        id_list.append(dic['number'])
+                    dic['_id']	=	int(node.getAttribute('id'))
+                    if not dic['_id'] in id_list:
+                        id_list.append(dic['_id'])
                         node_list.append(dic)
                     else:
                         print ("(EE) In the xml configuration file, duplicated node. Ignoring it.")
@@ -109,5 +114,58 @@ class Config:
         return self.generic_leaf_read(self.event_conf, 'Event')
         
     def read_simulation(self):
-        return self.generic_leaf_read(self.simulation_conf, 'Stop_condition')
+        conf = dict()
+        try:
+            conf['Convergence'] = self.generic_leaf_read(self.simulation_conf, 'Convergence')[0]
+        except IndexError:
+            pass
+        return conf
         
+def topology2xml(filename, topology):
+    from xml.dom.minidom import Document
+    doc = Document()
+    root = doc.createElement('Flowsim')
+    root.setAttribute('date', 'TODO')
+    root.setAttribute('version', 'TODO')
+    doc.appendChild(root)
+
+    xmltopology = doc.createElement('Topology')
+    root.appendChild(xmltopology)
+
+    xmlnodes = doc.createElement('Nodes')
+    xmltopology.appendChild(xmlnodes)
+    xmlnodedefault = doc.createElement('Default')
+    xmlnodedefault.setAttribute("name", "")
+    xmlnodes.appendChild(xmlnodedefault)
+
+    for node in topology.nodes_iter():
+        xmlnode = doc.createElement('Node')
+        xmlnode.setAttribute('id', str(node._id))
+        xmlnode.setIdAttribute('id')
+        xmlnode.setAttribute('name', str(node.name))
+        xmlnode.setAttribute('arrival_rate', str(node.arrival_rate))
+        xmlnode.setAttribute('service_rate', str(node.service_rate))
+        xmlnodes.appendChild(xmlnode)
+
+    xmledges = doc.createElement('Edges')
+    xmltopology.appendChild(xmledges)
+
+    xmledgedefault = doc.createElement('Default')
+    xmledgedefault.setAttribute("weight", str(1.))
+    xmledgedefault.setAttribute("capacity", str(1))
+    xmledgedefault.setAttribute("unidirectional", str(True))
+    xmledges.appendChild(xmledgedefault)
+
+    for edge in topology.edges(data=True):
+        xmledge = doc.createElement('Edge')
+        xmledge.setAttribute('source_id', str(edge[0]._id))
+        xmledge.setAttribute('destination_id', str(edge[1]._id))
+        xmledge.setAttribute('weight', str(edge[2]['weight']))
+        xmledge.setAttribute('capacity', str(edge[2]['object'].max_flows))
+        # Unidir always True since all edges have been instanciated
+        xmledge.setAttribute('unidirectional', str(True))
+        xmledges.appendChild(xmledge)
+    try:
+        open(filename, 'w').writelines(doc.toprettyxml(indent="  ", encoding="utf-8"))
+    except IOError:
+        raise
