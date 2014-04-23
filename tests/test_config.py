@@ -7,9 +7,11 @@ class Test_config(unittest.TestCase):
     def setUp(self):
         self.conf = TemporaryFile()
         self.config = Config(self.conf)
+        self.conf.Rclose = self.conf.close
+        self.conf.close = lambda: None
     
     def tearDown(self):
-        self.conf.close()
+        self.conf.Rclose()
         
     def dump_conf(self, conf):
         self.conf.seek(0, 0)
@@ -95,15 +97,15 @@ class Test_config(unittest.TestCase):
         conf = ['<?xml version="1.0" encoding="UTF-8"?>',
                 '<Flowsim datetime="2014-04-15 10:09" version="test">',
                 '<Simulation>',
-                '<Stop_condition condition_type="time" condition_value="1500"/>',
+                '<Convergence number_samples="15" epsilon="1e-3" check_interval="1e3"/>',
                 '</Simulation>',
                 '</Flowsim>']
         self.dump_conf(conf)
         self.config.read()
         res = self.config.read_simulation()
         self.assertTrue(len(res) == 1)
-        simulation1 = {'condition_type':'time', 'condition_value':'1500'}
-        self.assertTrue(simulation1 == res[0])
+        simulation1 = {'number_samples':'15', 'epsilon':'1e-3', 'check_interval':"1e3"}
+        self.assertTrue(simulation1 == res['Convergence'])
                         
     def test_read_nodes(self):
         conf = ['<?xml version="1.0" encoding="UTF-8"?>',

@@ -5,7 +5,7 @@ from flowsim.flowsim_exception import WrongConfig
 
 def expand_list_of_list(l):
     return [item for sublist in l for item in sublist]
-    
+
 
 class Config:
     def __init__(self, config_src):
@@ -21,6 +21,10 @@ class Config:
             self.topology_conf += Element.getElementsByTagName('Topology')
             self.event_conf += Element.getElementsByTagName('Events')
             self.simulation_conf += Element.getElementsByTagName('Simulation')
+        try:
+            self.config_src.close()
+        except:
+            pass
 
     def openXML(self, xmlFile):
 	   try:
@@ -110,7 +114,12 @@ class Config:
         return self.generic_leaf_read(self.event_conf, 'Event')
         
     def read_simulation(self):
-        return self.generic_leaf_read(self.simulation_conf, 'Stop_condition')
+        conf = dict()
+        try:
+            conf['Convergence'] = self.generic_leaf_read(self.simulation_conf, 'Convergence')[0]
+        except IndexError:
+            pass
+        return conf
         
 def topology2xml(filename, topology):
     from xml.dom.minidom import Document

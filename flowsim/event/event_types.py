@@ -146,11 +146,14 @@ class User_event_analyzer(object):
     def analyze_time_event(self, event_description):
         try:
             handling_time = float(event_description["trigger_value"])
-            target = int(event_description["event_target"])
+            try:
+                target = int(event_description["event_target"])
+            except ValueError:
+                target = None
             effect_value = float(event_description["effect_value"])
         except KeyError:
             raise KeyError("Illegal user event: missing field")
-        except ValueError:
+        except ValueError as ve:
             raise ValueError("Illegal user event: wrong type")
 
         if event_description["type"] == "arrival_burst_event":
@@ -164,17 +167,12 @@ class User_event_analyzer(object):
                                          "User",
                                          handling_time=handling_time,
                     					 time_interval=effect_value)
+        elif event_description["type"] == "watcher_event":
+            self.event_manager.add_event(Watcher_event,
+                                         "User",
+                                         handling_time=handling_time)
         else:
             raise NotImplemented
-
-
-class User_event(Event):
-    def __init__(self, event_manager, event_issuer):
-        Event.__init__(self, event_manager, event_issuer)
-        self.event_manager.new_user_event()
-
-    def post_handle(self):
-        self.event_manager.handled_user_event()
 
 
 class Sample_event(Event):  # Should not be User_event or infinite loop
@@ -189,6 +187,21 @@ class Sample_event(Event):  # Should not be User_event or infinite loop
                                      self.event_issuer,
                                      handling_time=self.handling_time + self.time_interval,
                                      time_interval=self.time_interval)
+
+class User_event(Event):
+    def __init__(self, event_manager, event_issuer):
+        Event.__init__(self, event_manager, event_issuer)
+        self.event_manager.new_user_event()
+
+    def post_handle(self):
+        self.event_manager.handled_user_event()
+
+
+# The Watcher on the Wall
+class Watcher_event(User_event):
+    def __init__(self, event_manager, event_issuer, **kwargs):
+        super(self.__class__, self).__init__(event_manager, event_issuer)
+        self.handling_time = kwargs.pop("handling_time")
 
 
 class Arrival_burst_event(User_event):
