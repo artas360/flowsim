@@ -6,7 +6,7 @@ from math import isnan
 class Test_result(unittest.TestCase):
     def setUp(self):
         self.result = result.Result()
-        
+
     def test_increase_value(self):
         self.result.increase_value("counter", "node1")
         self.assertTrue(self.result.get("counter", "node1") == 1)
@@ -37,7 +37,12 @@ class Test_result(unittest.TestCase):
 
     def test_computed_value(self):
         self.result.record_value("counter", "node1", 1.)
-        self.result.add_computed_value("val1", False, result.update_mean, "val1", "counter", False)
+        self.result.add_computed_value("val1",
+                                       False,
+                                       result.update_mean,
+                                       "val1",
+                                       "counter",
+                                       False)
         self.assertTrue(self.result.get("val1", "node1") == 0.)
         self.result.update_computed_value("val1", "node1", 5.)
         self.assertTrue(self.result.get("val1", "node1") == 5.)
@@ -47,7 +52,12 @@ class Test_result(unittest.TestCase):
 
         self.result.record_value("arrivals", "general", 9)
         self.result.record_value("failures", "general", 2)
-        self.result.add_computed_value("BR", True, result.event_division, "failures", "arrivals", True)
+        self.result.add_computed_value("BR",
+                                       True,
+                                       result.event_division,
+                                       "failures",
+                                       "arrivals",
+                                       True)
         self.assertTrue(self.result.get("BR", "general") == 2./9.)
         self.result.record_value("failures", "general", 3)
         self.assertTrue(self.result.get("BR", "general") == 3./9.)
@@ -57,12 +67,23 @@ class Test_result(unittest.TestCase):
         self.result.record_value("counter", "node2", 3.)
         self.result.record_value("counter", "node3", 5.)
         self.result.record_value("counter", "node4", 7.)
-        self.assertTrue(self.result.process_node_value(None, None, "counter", None, sum) == 16.)
+        self.assertTrue(self.result.process_node_value(None,
+                                                       None,
+                                                       "counter",
+                                                       None,
+                                                       sum) == 16.)
         self.result.record_value("counter", "general", 1.)
-        self.assertTrue(self.result.process_node_value(None, None, "counter", None, sum) == 16.)
+        self.assertTrue(self.result.process_node_value(None,
+                                                       None,
+                                                       "counter",
+                                                       None,
+                                                       sum) == 16.)
 
     def test_sample_convergence(self):
-        self.assertRaises(KeyError, self.result.check_convergence, "conv", "general")
+        self.assertRaises(KeyError,
+                          self.result.check_convergence,
+                          "conv",
+                          "general")
         self.result.register_convergence("conv", "general", 3, .1)
         self.assertFalse(self.result.check_convergence("conv", "general"))
         self.result.check_convergence("conv", "general", True, 9)
@@ -76,8 +97,14 @@ class Test_result(unittest.TestCase):
 
     def test_get_results(self):
         self.result.record_value("counter", "node1", 1.)
-        self.result.add_computed_value("val1", False, result.update_mean, "val1", "counter", False)
+        self.result.add_computed_value("val1",
+                                       False,
+                                       result.update_mean,
+                                       "val1",
+                                       "counter",
+                                       False)
         self.result.update_computed_value("val1", "node1", 5.)
+
 
 class Test_sample_container(unittest.TestCase):
     def setUp(self):

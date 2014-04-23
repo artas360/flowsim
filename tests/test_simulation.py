@@ -1,22 +1,13 @@
-import unittest
-from flowsim import Simulation
+from unittest import TestCase
+
+from flowsim.simulation import Simulation
 
 
-class Test_Simulation(unittest.TestCase):
+class Test_Simulation(TestCase):
 
     def test_constructor(self):
         sim = Simulation(0.2, 0.9)
         sim = Simulation(0.2, 0.9, 21312)
-
-    def test_copy(self):
-        sim = Simulation(0.2, 0.9, 21312)
-        sim.init_simulation([0, 1], [(0, 1)], [], {})
-        sim2 = sim.copy()
-        assert (not sim is sim2)
-        assert (sim.arrival_rate == sim2.arrival_rate and
-                sim.service_rate == sim2.service_rate and
-                sim.rand_seed == sim2.rand_seed and
-                not sim.topology is sim2.topology)
 
     def test_init_event_manager(self):
         sim = Simulation(0.2, 0.9, 21312)
@@ -51,7 +42,7 @@ class Test_Simulation(unittest.TestCase):
         edges = [(1, 2), (2, 0)]
         sim.init_simulation(nodes, edges, [], {})
 
-        sim.launch_simulation(50)
+        sim.launch_simulation()
 
     def test_launch_simulation2(self):
         sim = Simulation(0.5, 0.5, 21312)
@@ -89,14 +80,3 @@ class Test_Simulation(unittest.TestCase):
         res = sim.launch_simulation()['latest']["general"]
         # Is it realy the expected result?
         assert (abs(res['Blocking_rate'] - 0.29) < 0.05)
-
-    def test_reset_simulation(self):
-        sim = Simulation(0.9, 0.9)
-        nodes = [0, 1, 2]
-        edges = [(0, 1), (1, 2), (2, 0)]
-
-        sim.init_simulation(nodes, edges, [], {})
-        res = sim.launch_simulation()
-
-        sim.reset()
-        sim.reset(0.5, 0.4)

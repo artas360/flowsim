@@ -1,5 +1,4 @@
 from flowsim.flowsim_exception import NoPathError
-from flowsim.physical_layer.node import Node
 from flowsim.result import update_mean
 
 
@@ -21,7 +20,7 @@ class Event(object):
     def automated_update_result(self):
         self.result.increase_value(self.__class__, "general")
         self.result.increase_value(self.__class__,
-                                       self.event_issuer)
+                                   self.event_issuer)
         self.update_result()
 
     def update_result(self):  # To specialize in child class
@@ -29,9 +28,6 @@ class Event(object):
 
     def handle_event(self):  # To specialize in child class
         pass
-
-    def get_debug(self):
-        return [self.__class__, self.handling_time, self.event_end_time]
 
     def post_handle(self):
         pass
@@ -159,12 +155,12 @@ class User_event_analyzer(object):
                                          "User",
                                          handling_time=handling_time,
                                          target=target,
-                    					 effect_value=effect_value)
+                                         effect_value=effect_value)
         elif event_description["type"] == "sample_event":
             self.event_manager.add_event(Sample_event,
                                          "User",
                                          handling_time=handling_time,
-                    					 time_interval=effect_value)
+                                         time_interval=effect_value)
         elif event_description["type"] == "watcher_event":
             self.event_manager.add_event(Watcher_event,
                                          "User",
@@ -183,8 +179,10 @@ class Sample_event(Event):  # Should not be User_event or infinite loop
         self.result.take_snapshot(self.handling_time, True)
         self.event_manager.add_event(self.__class__,
                                      self.event_issuer,
-                                     handling_time=self.handling_time + self.time_interval,
+                                     handling_time=(self.handling_time +
+                                                    self.time_interval),
                                      time_interval=self.time_interval)
+
 
 class User_event(Event):
     def __init__(self, event_manager, event_issuer):
@@ -213,11 +211,12 @@ class Arrival_burst_event(User_event):
         topo = self.event_manager.get_flow_controller().get_topology()
         topo.swap_node_arr_rate(self.target, self.new_arrival_rate)
 
-Event_type_list=[Arrival_Event,
-                 End_flow_Event,
-                 End_of_simulation_Event,
-                 Flow_allocation_success_event,
-                 Flow_allocation_failure_Event,
-                 Arrival_burst_event,
-                 Sample_event
-                 ]
+
+Event_type_list = [Arrival_Event,
+                   End_flow_Event,
+                   End_of_simulation_Event,
+                   Flow_allocation_success_event,
+                   Flow_allocation_failure_Event,
+                   Arrival_burst_event,
+                   Sample_event
+                   ]

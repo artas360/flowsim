@@ -1,14 +1,15 @@
 #!/usr/bin/pyton
 
-import unittest
-import networkx
-from flowsim.physical_layer.node import Node
-from flowsim.physical_layer.edge import Edge
+from unittest import TestCase, skip
+
+from networkx import shortest_path
 
 from flowsim.physical_layer.topology import Topology
 from flowsim.physical_layer.topology import draw_graph
 from flowsim.physical_layer.topology import torus2D
 from flowsim.physical_layer.topology import torus3D
+from flowsim.physical_layer.node import Node
+from flowsim.physical_layer.edge import Edge
 from flowsim.flowsim_exception import NoSuchEdge
 from flowsim.flowsim_exception import NoSuchNode
 from flowsim.flowsim_exception import DuplicatedNodeError
@@ -20,7 +21,7 @@ class Flow(object):
     pass
 
 
-class Test_node(unittest.TestCase):
+class Test_node(TestCase):
 
     def setUp(self):
         Node.counter = 0
@@ -32,28 +33,6 @@ class Test_node(unittest.TestCase):
             [Node(self.arrival_rate, self.service_rate, i) for i in range(3)]
         assert set(map(int, nodes)) == set([0, 1, 2])
         self.assertTrue(nodes[0].backup_arr_rate == self.arrival_rate)
-
-    def test_reset(self):
-        node = Node(self.arrival_rate, self.service_rate, 0)
-        assert (node.get_arrival_rate() == self.arrival_rate)
-        assert (node.get_service_rate() == self.service_rate)
-        node.reset()
-        assert (node.get_arrival_rate() == self.arrival_rate)
-        assert (node.get_service_rate() == self.service_rate)
-        node.reset(.1, .2)
-        assert (node.get_arrival_rate() == .1)
-        assert (node.get_service_rate() == .2)
-
-    def test_copy(self):
-        node1 = Node(1.2, 1.3, 0)
-        node2 = node1.copy()
-
-        assert(not node1 is node2)
-        assert(node1.arrival_rate == node2.arrival_rate and
-               node1.backup_arr_rate == node2.backup_arr_rate and
-               node1.service_rate == node2.service_rate and
-               node1._id == node2._id and
-               node1.name == node2.name)
 
     def test_swap(self):
         node1 = Node(1.2, 1.3, 0)
@@ -67,17 +46,7 @@ class Test_node(unittest.TestCase):
         self.assertTrue(node1.arrival_rate == 1.2)
 
 
-class Test_edge(unittest.TestCase):
-
-    def test_copy(self):
-        edge1 = Edge()
-        edge2 = edge1.copy()
-
-        assert(not edge1 is edge2)
-        assert(edge1.max_flows == edge2.max_flows and
-               edge1.available_flows == edge2.max_flows and
-               edge1.passing_flows == edge2.passing_flows and
-               edge1.name == edge2.name)
+class Test_edge(TestCase):
 
     def test_get_const_value(self):
         edge = Edge()
@@ -111,43 +80,13 @@ class Test_edge(unittest.TestCase):
 
         self.assertRaises(EdgeAllocationError, edge.free_flow, Flow())
 
-    def test_reset(self):
-        edge = Edge(2)
-        flow = Flow()
 
-        edge.allocate_flow(flow)
-        edge.reset()
-
-        assert(edge.available_flows == edge.max_flows)
-        assert(edge.passing_flows == [])
-
-
-class Test_topology(unittest.TestCase):
+class Test_topology(TestCase):
 
     def setUp(self):
         Node.counter = 0
         self.arrival_rate = 0.5
         self.service_rate = 0.5
-
-    def test_copy(self):
-        topo = Topology()
-        n1, n2 = (Node(.1, .2, 0), Node(.3, .4, 1))
-        edge = Edge()
-        topo.add_nodes([n1, n2])
-        topo.add_edge(n1, n2, edge, 3)
-
-        topo2 = topo.copy()
-
-        assert (topo.edges()[0][0].name == topo2.edges()[0][0].name and
-                not topo.edges()[0][0] is topo2.edges()[0][0])
-        assert (topo.edges()[0][1].name == topo2.edges()[0][1].name and
-                not topo.edges()[0][1] is topo2.edges()[0][1])
-        assert (topo2.edges()[0][0].name == n1.name and
-                topo2.edges()[0][1].name == n2.name)
-        assert (topo2.edges(data=True)[0][2]['weight'] == 3 and
-                not topo2.edges(data=True)[0][2]['object'] is edge and
-                topo2.edges(data=True)[0][2]['object'].name == edge.name)
-        assert (not topo2 is topo)
 
     def test_add_node(self):
         top = Topology()
@@ -179,7 +118,8 @@ class Test_topology(unittest.TestCase):
 
     def test_add_edges(self):
         topo = Topology()
-        nodes = [Node(self.arrival_rate, self.service_rate, 0) for i in range(4)]
+        nodes = [Node(self.arrival_rate, self.service_rate, 0)
+                 for i in range(4)]
         edges = [Edge() for i in range(3)]
         topo.add_edges([(nodes[0], nodes[1], {'object': edges[0]}),
                        (nodes[1], nodes[2], {'object': edges[1]}),
@@ -222,10 +162,10 @@ class Test_topology(unittest.TestCase):
         topo.add_edge(nodes[3], nodes[4], Edge(), edge_weight=1)
         # Link 2 -> 4 not available
         topo.set_edge_unavailable(nodes[2], nodes[4])
-        assert(networkx.shortest_path(topo,
-                                      nodes[0],
-                                      nodes[5],
-                                      weight='weight') ==
+        assert(shortest_path(topo,
+                             nodes[0],
+                             nodes[5],
+                             weight='weight') ==
                [nodes[0], nodes[3], nodes[4], nodes[5]])
 
     def test_set_edge_unavailable(self):
@@ -268,9 +208,7 @@ class Test_topology(unittest.TestCase):
         self.assertTrue(topo.id_to_node[1].arrival_rate == self.arrival_rate)
         self.assertRaises(NoSuchNode, topo.swap_node_arr_rate, 5)
 
-
     def test_build_topology_from_int(self):
-
         topo = Topology()
         # Node int, edge (int, int)
         nodes = range(4)
@@ -333,8 +271,8 @@ class Test_topology(unittest.TestCase):
         # Node by name {'name', '_id'}
         nodes = [{'name': 'n1', '_id': 2}, {'name': 'n2', '_id': 2}]
         edges = [(2, 3)]
-        self.assertRaises(DuplicatedNodeError, 
-                          topo.build_topology_from_int, 
+        self.assertRaises(DuplicatedNodeError,
+                          topo.build_topology_from_int,
                           nodes, edges,
                           self.arrival_rate,
                           self.service_rate)
@@ -362,25 +300,13 @@ class Test_topology(unittest.TestCase):
         # Node by name {'name', '_id'}
         nodes = [{'name': 'n1', '_id': 2}, {'name': 'n2', '_id': 2}]
         edges = [{'nodes': ('n1', 'n2')}]
-        self.assertRaises(DuplicatedNodeError, 
-                          topo.build_topology_from_int, 
+        self.assertRaises(DuplicatedNodeError,
+                          topo.build_topology_from_int,
                           nodes, edges,
                           self.arrival_rate,
                           self.service_rate)
 
-    def test_import_topology(self):
-        filename = './graph0_yed.graphml'
-        imported_graph = networkx.read_graphml(filename)
-        topo = Topology()
-        topo.import_topology(filename, self.arrival_rate, self.service_rate)
-        assert set(map(lambda x: x.get_name(), topo.nodes())) ==\
-            set(imported_graph.nodes())
-        assert set([frozenset([node1.get_name(), node2.get_name()])
-                    for node1, node2 in topo.edges()]) ==\
-            set([frozenset([node1, node2])
-                 for node1, node2 in imported_graph.edges()])
-
-    @unittest.skip('Pauses tests')
+    @skip('Pauses tests')
     def test_draw_graph(self):
         topo = Topology()
         nodes = range(4)
@@ -416,26 +342,6 @@ class Test_topology(unittest.TestCase):
         assert not topo[nodes[1]][nodes[2]]['weight'] == topo.infinity
 
         assert flow not in edge.passing_flows
-
-    def test_reset(self):
-        topo = Topology()
-
-        n = [Node(.1, .2, 0), Node(.2, .3, 1)]
-        e = Edge()
-
-        topo.add_nodes([n[0], n[1]])
-        topo.add_edge(n[0], n[1], e)
-
-        topo.set_edge_unavailable(n[0], n[1])
-
-        topo.reset()
-        assert(topo[n[0]][n[1]]['weight'] != topo.infinity)
-
-        topo.reset(.5, .6)
-        assert(n[0].get_arrival_rate() == .5
-               and n[0].get_service_rate() == .6)
-        assert(n[1].get_arrival_rate() == .5
-               and n[1].get_service_rate() == .6)
 
     def test_torus2D(self):
         topo = Topology()

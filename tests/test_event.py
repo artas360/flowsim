@@ -1,10 +1,11 @@
 #!/usr/bin/pyton
 
-import unittest
-from flowsim.event.event import Event_manager, Event
+from unittest import TestCase
+
 from flowsim.event.event_types import *
-from flowsim.result import Result
 from flowsim.random_generator import Random_generator
+from flowsim.event.event import Event_manager, Event
+from flowsim.result import Result
 
 
 class Simu(object):
@@ -48,6 +49,7 @@ class Node(object):
     def get_service_rate(self):
         return .1
 
+
 class Topo(object):
 
     def get_random_entry_node(self, number):
@@ -60,7 +62,7 @@ class Topo(object):
         pass
 
 
-class Test_Event_manager(unittest.TestCase):
+class Test_Event_manager(TestCase):
 
     def setUp(self):
         self.rand_gen = Random_generator(Topo(), None)
@@ -134,11 +136,11 @@ class Test_Event_manager(unittest.TestCase):
         [type_list.index(type(event)) for event in event_manager.event_list]
 
     def test_user_event_types(self):
-        user_event = {"type":"arrival_burst_event",
-                      "trigger_type":"time",
-                      "trigger_value":"15",
-                      "event_target":"1",  # this is a node _id
-                      "effect_value":".6"}
+        user_event = {"type": "arrival_burst_event",
+                      "trigger_type": "time",
+                      "trigger_value": "15",
+                      "event_target": "1",  # this is a node _id
+                      "effect_value": ".6"}
         event_manager = Event_manager(Simu(), self.rand_gen, [user_event])
 
     def test_handle_event(self):

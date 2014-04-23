@@ -5,7 +5,8 @@ from flowsim.event.event_types import *
 
 class Event_manager:
 
-    def __init__(self, simulation, random_generator, user_events=[], simulation_conf={}):
+    def __init__(self, simulation, random_generator,
+                 user_events=[], simulation_conf={}):
         self.simulation = simulation
         self.flow_controller = None
         self.EOS = False  # End of simulation
@@ -31,15 +32,14 @@ class Event_manager:
         convergence = simulation_conf.pop("Convergence", {})
         self.convergence_check_interval = \
             int(float(convergence.pop("check_interval",
-                            self.convergence_check_interval)))
+                                      self.convergence_check_interval)))
 
-        self.convergence_number_samples= \
+        self.convergence_number_samples = \
             int(float(convergence.pop("number_samples",
-                            self.convergence_number_samples)))
+                                      self.convergence_number_samples)))
 
-        self.convergence_epsilon= \
-            float(convergence.pop("epsilon",
-                            self.convergence_epsilon))
+        self.convergence_epsilon = \
+            float(convergence.pop("epsilon", self.convergence_epsilon))
 
     def import_user_events(self):
         analyzer = User_event_analyzer(self, "USER")
@@ -66,6 +66,7 @@ class Event_manager:
         event.automated_update_result()
         event.post_handle()
 
+    # TODO profile
     def add_event(self, Event_type, event_issuer, **kwargs):
         if not issubclass(Event_type, Event):
             raise TypeError
@@ -78,11 +79,11 @@ class Event_manager:
                            node)
         self.result.\
             add_computed_value('Blocking_rate',
-                                True,
-                                event_division,
-                                Flow_allocation_failure_Event,
-                                Arrival_Event,
-                                True)
+                               True,
+                               event_division,
+                               Flow_allocation_failure_Event,
+                               Arrival_Event,
+                               True)
 
         self.result.register_convergence("Blocking_rate",
                                          "general",
@@ -97,8 +98,8 @@ class Event_manager:
         has_converged = False
         counter = 0
 
-        while not self.EOS and \
-            not (has_converged and self.remaining_user_events <= 0):
+        while (not self.EOS and
+               not (has_converged and self.remaining_user_events <= 0)):
             self.handle_next_event()
 
             if counter == self.convergence_check_interval:
@@ -131,4 +132,4 @@ class Event_manager:
         return self.elapsed_time
 
     def new_arrivals(self):
-        return not self.simulation.end()
+        return not self.EOS

@@ -1,4 +1,4 @@
-import flow as flow_module
+from flowsim.flow.flow import Flow
 from flowsim.flowsim_exception import NoPathError,\
     NotRegisteredFlow,\
     RessourceAllocationError
@@ -21,7 +21,7 @@ class Flow_controller(object):
             raise NoPathError()
         edges = [self.topology.get_edge_object(nodes[i], nodes[i+1])
                  for i in xrange(len(nodes)-1)]
-        flow = flow_module.Flow(nodes)
+        flow = Flow(nodes)
 
         try:
             for edge in edges:
@@ -52,9 +52,6 @@ class Flow_controller(object):
 
     def get_entry_nodes(self):
         return self.topology.get_entry_nodes()
-
-    def handle_flow_allocation_failure(self, source_node, dest_node):
-        self.event_manager.flow_allocation_failure(source_node, dest_node)
 
     def get_topology(self):
         return self.topology

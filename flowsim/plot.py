@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
 
 
 def simple_time_plot(result, data_key, time_key="elapsed_time"):
@@ -11,7 +11,7 @@ def simple_time_plot(result, data_key, time_key="elapsed_time"):
             continue
     data.sort(key=lambda x: x[0])
 
-    fig = plt.figure()
+    fig = figure()
     ax = fig.add_subplot(111)
     # fig.delaxes(ax)
     ax.plot([x[0] for x in data],
@@ -20,6 +20,3 @@ def simple_time_plot(result, data_key, time_key="elapsed_time"):
             label=str(data_key)+'=f('+str(time_key)+')')
     ax.set_xlabel(time_key)
     ax.set_ylabel(data_key)
-
-
-

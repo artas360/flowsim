@@ -1,7 +1,6 @@
 import networkx
-import sys
-from edge import Edge
-from node import Node, Entry_node, Exit_node
+from flowsim.physical_layer.edge import Edge
+from flowsim.physical_layer.node import Node, Entry_node, Exit_node
 from flowsim.flowsim_exception import NoSuchEdge,\
     DuplicatedNodeError,\
     NoPathError,\
@@ -16,20 +15,6 @@ class Topology(networkx.DiGraph):
         self.exit_nodes = []
         self.infinity = float('inf')
         self.id_to_node = {}
-
-    def copy(self):
-        topo = Topology()
-        ref_dict = dict()
-        for node in self.nodes_iter():
-            ref_dict[node] = node.copy()
-            topo.add_node(ref_dict[node])
-        for (src, dst, d) in self.edges_iter(data=True):
-            topo.add_edge(ref_dict[src],
-                          ref_dict[dst],
-                          d['object'].copy(),
-                          d['weight'] if d['weight'] != self.infinity else
-                          d['edge_former_weight'])
-        return topo
 
     def add_node(self, node):
         super(self.__class__, self).add_node(node)
@@ -85,7 +70,6 @@ class Topology(networkx.DiGraph):
         # Every edge is both ways if not edge['unidir'] set or set to False
         temp_dict = dict()
 
-        # TODO nodes.sort()
         for node in nodes:
             if type(node) == int or type(node) == str:
                 node = {'_id': node}
@@ -97,14 +81,16 @@ class Topology(networkx.DiGraph):
             elif type(node) == dict:
                 pass
             else:
-                raise TypeError("Unsuported node description type, " + str(type(node)))
+                raise TypeError("Unsuported node description type, " +
+                                str(type(node)))
             if type(node) == dict:
                 node_type = node.pop('type', '')
                 if not '_id' in node:
                     try:
                         node['_id'] = node['name']
                     except KeyError:
-                        raise ValueError("Invalid Node, should have an _id or name")
+                        raise ValueError("Invalid Node, should have an "
+                                         "_id or name")
 
                 if not 'name' in node:
                     node['name'] = node['_id']
@@ -182,24 +168,8 @@ class Topology(networkx.DiGraph):
     def get_entry_nodes(self):
         return self.entry_nodes if len(self.entry_nodes) > 0 else self.nodes()
 
-    def import_topology(self, filename, arrival_rate, service_rate):
-        #TODO : catch exceptions
-        print("import_topology(): Deprecated/broken, use config file.")
-        g = networkx.read_graphml(filename)
-        nodes = [{'name': node,
-                  'arrival_rate': arrival_rate,
-                  'service_rate': service_rate} for node in g.nodes()]
 
-        self.build_topology_from_int(nodes, g.edges())
-
-    def reset(self, arrival_rate=None, service_rate=None):
-        map(lambda x: x.reset(arrival_rate, service_rate), self.nodes_iter())
-        map(lambda x: x[2]['object'].reset(),
-            self.edges_iter(data=True))
-        map(lambda x: self.free_edge(x[0], x[1], None),
-            self.edges_iter(data=True))
-
-
+# TODO Frozenset useless each node has exactly two edges for itself
 def torus2D(x, y, start_index=0):
     if x <= 2 or y <= 2:
         raise NotImplemented

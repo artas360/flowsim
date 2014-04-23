@@ -36,5 +36,3 @@ class EdgeAllocationError(Exception):
 
 class WrongConfig(Exception):
     pass
-
-
