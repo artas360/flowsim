@@ -20,9 +20,7 @@ class Event(object):
 
     def automated_update_result(self):
         self.result.increase_value(self.__class__, "general")
-        # TODO : new class NodeEvent
-        if isinstance(self.event_issuer, Node):
-            self.result.increase_value(self.__class__,
+        self.result.increase_value(self.__class__,
                                        self.event_issuer)
         self.update_result()
 

@@ -130,7 +130,7 @@ def update_mean(submap, new_element, mean_key, denominator_key):
         number_of_values = float(submap[denominator_key])
         assert(number_of_values != 0.)
     except KeyError:
-        return float('nan')
+        return 0  # Will be triggered by add_computed_value
     return (submap[mean_key] * (number_of_values - 1) + new_element) / number_of_values
 
 def event_division(submap, foo1, numerator_key, denominator_key):
