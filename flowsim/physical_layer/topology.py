@@ -68,7 +68,9 @@ class Topology(networkx.DiGraph):
         # edges -> list of (node1, node2) or (node1, node2, capacity)
         # or (node1, node2, capacity, weight)
         # Every edge is both ways if not edge['unidir'] set or set to False
-        temp_dict = dict()
+
+        node_list = []
+        edge_list = []
 
         for node in nodes:
             if type(node) == int or type(node) == str:
@@ -83,36 +85,7 @@ class Topology(networkx.DiGraph):
             else:
                 raise TypeError("Unsuported node description type, " +
                                 str(type(node)))
-            if type(node) == dict:
-                node_type = node.pop('type', '')
-                if not '_id' in node:
-                    try:
-                        node['_id'] = node['name']
-                    except KeyError:
-                        raise ValueError("Invalid Node, should have an "
-                                         "_id or name")
-
-                if not 'name' in node:
-                    node['name'] = node['_id']
-                if not 'arrival_rate' in node:
-                    node['arrival_rate'] = arrival_rate
-                if not 'service_rate' in node:
-                    node['service_rate'] = service_rate
-                if node_type == 'entry':
-                    new_node = Entry_node(**node)
-                    self.entry_nodes.append(new_node)
-                elif node_type == 'exit':
-                    new_node = Exit_node(**node)
-                    self.exit_nodes.append(new_node)
-                else:
-                    new_node = Node(**node)
-                if node['_id'] in temp_dict:
-                    raise DuplicatedNodeError
-                temp_dict[node['_id']] = new_node
-                self.add_node(new_node)
-            else:
-                raise TypeError
-        self.id_to_node.update(temp_dict)
+            node_list.append(node)
 
         for edge in edges:
             # TODO duplicated node -> increase capacity?
@@ -128,24 +101,70 @@ class Topology(networkx.DiGraph):
                     temp_edge['weight'] = edge[3]
                 else:
                     raise TypeError
-                edge = temp_edge
-            if type(edge) == dict:
+            elif type(edge) == dict:
+                temp_edge = edge
+            else:
+                raise TypeError("Unsuported edge description type, " +
+                                str(type(edge)))
+            edge_list.append(temp_edge)
+        self.build_topology(node_list, edge_list, arrival_rate, service_rate)
+
+    def build_topology(self, nodes, edges,
+                       arrival_rate=None, service_rate=None):
+        temp_dict = dict()
+        for node in nodes:
+            if type(node) != dict:
+                raise TypeError
+
+            node_type = node.pop('type', '')
+            if not '_id' in node:
+                try:
+                    node['_id'] = node['name']
+                except KeyError:
+                    raise ValueError("Invalid Node, should have an "
+                                     "_id or name")
+
+            if not 'name' in node:
+                node['name'] = node['_id']
+            if not 'arrival_rate' in node:
+                node['arrival_rate'] = arrival_rate
+            if not 'service_rate' in node:
+                node['service_rate'] = service_rate
+            if node_type == 'entry':
+                new_node = Entry_node(**node)
+                self.entry_nodes.append(new_node)
+            elif node_type == 'exit':
+                new_node = Exit_node(**node)
+                self.exit_nodes.append(new_node)
+            else:
+                new_node = Node(**node)
+            if node['_id'] in temp_dict:
+                raise DuplicatedNodeError
+            temp_dict[node['_id']] = new_node
+            self.add_node(new_node)
+        self.id_to_node.update(temp_dict)
+
+        for edge in edges:
+            if type(edge) != dict:
+                raise TypeError
+
+            try:
                 nodes = edge.pop('nodes')
-                weight = edge.pop('weight', 1)
-                unidir = edge.pop('unidir', False)
+            except KeyError:
+                print edge
+            weight = edge.pop('weight', 1)
+            unidir = edge.pop('unidir', False)
+            new_edge = Edge(**edge)
+            self.add_edge(temp_dict[nodes[0]],
+                          temp_dict[nodes[1]],
+                          new_edge,
+                          weight)
+            if not unidir:
                 new_edge = Edge(**edge)
-                self.add_edge(temp_dict[nodes[0]],
-                              temp_dict[nodes[1]],
+                self.add_edge(temp_dict[nodes[1]],
+                              temp_dict[nodes[0]],
                               new_edge,
                               weight)
-                if not unidir:
-                    new_edge = Edge(**edge)
-                    self.add_edge(temp_dict[nodes[1]],
-                                  temp_dict[nodes[0]],
-                                  new_edge,
-                                  weight)
-            else:
-                raise TypeError()
 
     def get_random_entry_node(self, number):
         if len(self.entry_nodes) == 0:
