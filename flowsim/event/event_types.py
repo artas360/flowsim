@@ -218,5 +218,6 @@ Event_type_list = [Arrival_Event,
                    Flow_allocation_success_event,
                    Flow_allocation_failure_Event,
                    Arrival_burst_event,
-                   Sample_event
+                   Sample_event,
+                   Watcher_event
                    ]

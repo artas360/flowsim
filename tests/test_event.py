@@ -109,6 +109,11 @@ class Test_Event_manager(TestCase):
                                 time_interval=9)
         event_count += 1
 
+        event_manager.add_event(Watcher_event,
+                                "User",
+                                handling_time=0)
+        event_count += 1
+
         # Checking that all events are tested
         self.assertEqual(event_count, len(Event_type_list))
 
