@@ -28,6 +28,7 @@ class Event_manager {
         typedef typename Simulation::result_t result_t;
         typedef typename Simulation::flow_controller_t flow_controller_t;
         typedef typename Simulation::flow_key_t flow_key_t;
+        typedef typename Simulation::topology_t::node_key_t node_key_t;
 
         Event_manager(typename Simulation::flow_controller_t & flow_controller) : allocator_(),
                                                                                        event_list_(),
@@ -56,7 +57,7 @@ class Event_manager {
 
             result_.record_value(std::string("time_elapsed"),
                                  result_.get_general_key(),
-                                 time_elapsed_)
+                                 time_elapsed_);
 
             event->handle_event();
             event->automated_update_result();
@@ -98,13 +99,12 @@ class Event_manager {
             size_t counter = 0;
             const std::string block_rate("Blocking_rate");
 
-            self.init_run();
+            init_run();
 
             while(not EOS_ and not has_converged){
                 handle_next_event();
             }
 
-            // for(;;) {}
             while (not EOS_ and not has_converged) {
                 handle_next_event();
 
@@ -134,6 +134,20 @@ class Event_manager {
 
         typename Simulation::result_t & get_result() {
             return result_;
+        }
+
+        node_key_t const get_random_exit_node(node_key_t const& different_from) {
+            int loop_prevention = 100;
+            node_key_t node_key;
+
+            do{
+                node_key = flow_controller_.get_topology().get_random_entry_node(rand_generator_.rand_int());
+            } while(node_key == different_from and --loop_prevention);
+
+            if(not loop_prevention)
+                throw Loop_error();
+
+            return node_key;
         }
 
         inline bool new_arrivals() const {
@@ -182,6 +196,7 @@ struct FooFlowKey{
 };
 
 struct FooResult {
+    typedef float result_value_t;
     void increase_value(std::string, Node<>) {
     }
 };
@@ -194,10 +209,15 @@ struct FooFlowController {
     }
 };
 
+struct FooTopology {
+    typedef int node_key_t;
+};
+
 struct FooSimulation {
     typedef FooFlowKey flow_key_t;
     typedef FooResult result_t;
     typedef FooFlowController flow_controller_t;
+    typedef FooTopology topology_t;
 };
 
 int test_event() {

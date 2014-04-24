@@ -30,10 +30,7 @@ class Random_generator {
             return number_generator(lowest, highest)(generator_);
         }
 
-        // Put in topology, just feed it some int
-        //std::pair<node_key const&, node_key const&> random_io_nodes() {
-        //}
-
+        // In event_manager
         //node_key const& random_exit_node(node_key const&/* different_from*/) {
         //}
 

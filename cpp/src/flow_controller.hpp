@@ -21,16 +21,16 @@ class Key_generator {
         }
 
         static key_t is_valid_key(key_t key) {
-            return key != not_key;
+            return key != no_key;
         }
 
         static const key_t not_key() {
-            return not_key;
+            return no_key;
         }
 
     private:
         key_t counter_;
-        static const key_t not_key = 0;
+        static const key_t no_key = 0;
 };
 
 template <class Event_manager, class Topology, class flow_t, class key_t=size_t, class Flow_container = std::unordered_map<key_t, flow_t>, class Key_generator=Key_generator<key_t>>
@@ -117,7 +117,7 @@ class Flow_controller {
 
 #endif
 
-#if TEST
+#if TEST_FLOW_CONTROLLER
 
 class FooEdge {
     public:

@@ -15,5 +15,6 @@ GEN_EXCEPTION(Ressource_allocation_error)
 GEN_EXCEPTION(Not_registered_flow)
 GEN_EXCEPTION(Not_registered_value)
 GEN_EXCEPTION(Not_implemented_yet)
+GEN_EXCEPTION(Loop_error)
 
 #endif

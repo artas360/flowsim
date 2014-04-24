@@ -10,14 +10,14 @@
 #include "result.hpp"
 #include "flow_controller.hpp"
 
-#define INSTANCIATE_CLASS_NAME(X) \
-temlpate<#X>\
-std::string __class__(#X const&) {\
-    return std::string("#X");\
-}
+#define INSTANCIATE_CLASS_NAME(X) ;
+//template<>\
+//std::string __class__(#X const&) {\
+//    return std::string("#X");\
+//}
 
 template <class etype>
-std::string __class__() {
+std::string __class__(etype const&) {
     return std::string();
 }
 
@@ -32,10 +32,11 @@ class Event {
 
         template <typename... Args>
          void init(Args... params);
-        virtual void update_result() = 0;
         virtual void handle_event() = 0;
-        virtual std::string __class__() = 0 const;
         virtual void automated_update_result() = 0; 
+
+        virtual void update_result() {
+        }
 
         event_time_t const& immediate_handling() const {
             return event_manager_.get_time_elapsed();
@@ -87,10 +88,10 @@ class Specialized_event : public Event<Event_manager>{
         virtual ~Specialized_event() {}
 
         virtual void automated_update_result() {
-            event_manager_.get_result().increase_value(__class__(*this),
-                                                       event_manager_.get_result().get_general_key());
-            event_manager_.get_result().increase_value(__class__(*this),
-                                                       event_issuer_);
+            this->get_event_manager().get_result().increase_value(__class__(*this),
+                                                                   this->get_event_manager().get_result().get_general_key());
+            this->get_event_manager().get_result().increase_value(__class__(*this),
+                                                                   event_issuer_);
         }
 
     protected:
@@ -122,7 +123,7 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
                 this->get_event_manager().template add_event<Arrival_event>(this->get_event_issuer());
             }
 
-            Event_issuer &dst_node = this->get_event_manager().get_random_generator().get_random_exit_node(this->get_event_issuer());
+            Event_issuer &dst_node = this->get_event_manager().get_random_exit_node(this->get_event_issuer());
 
             try {
                 flow = this->get_event_manager().get_flow_controller().allocate_flow(this->get_event_issuer(), dst_node);
@@ -196,8 +197,11 @@ class Flow_allocation_success_event: public Specialized_event<Event_manager, Eve
 
         Flow_allocation_success_event(Event_manager &event_manager, Event_issuer &event_issuer, flow_t &flow) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, Event<Event_manager>::immediate_handling()), flow_(flow) {}
 
+        void handle_event() {
+        }
+
         void update_result() {
-            this->get_event_manager().get_result().update_computed_value(std::string("mean_nodes_per_flow"), this->get_event_manager().get_flow_controller().get_flow(flow).length());
+            this->get_event_manager().get_result().update_computed_value(std::string("mean_nodes_per_flow"), this->get_event_manager().get_flow_controller().get_flow(flow_).length());
         }
 
         std::string __class__() const {
@@ -214,6 +218,9 @@ template <class Event_manager, class Event_issuer>
 class Flow_allocation_failure_event: public Specialized_event<Event_manager, Event_issuer> {
     public:
         Flow_allocation_failure_event(Event_manager &event_manager, Event_issuer &event_issuer) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, Event<Event_manager>::immediate_handling()) {}
+
+        void handle_event() {
+        }
 
         void update_result() {
             this->get_event_manager().get_result().increase_value(std::string("Flow_allocation_failure_event"), this->get_event_issuer());

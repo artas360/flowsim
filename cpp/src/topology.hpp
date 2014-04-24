@@ -60,7 +60,6 @@ class Topology {
     public:
         typedef typename boost::graph_traits<Graph>::edge_iterator edge_iterator;
         typedef typename boost::graph_traits<Graph>::vertex_iterator node_iterator;
-        typedef typename boost::graph_traits<Graph>::const_vertex_iterator const_node_iterator;
         typedef typename boost::property_map<Graph, boost::edge_obj1_t>::type edge_map_t;
         typedef typename boost::property_map<Graph, boost::vertex_obj2_t>::type node_map_t;
         typedef edge_descriptor edge_key_t;
@@ -193,17 +192,14 @@ class Topology {
             return *(boost::vertices(g_).first + (number % num_vertices(g_)));
         }
 
-        std::pair<const_node_iterator, const_node_iterator> nodes() const {
+        // TODO find a way to const cast
+        std::pair<node_iterator, node_iterator> nodes() const {
             return boost::vertices(g_);
         }
 
 #if TEST
         std::pair<edge_iterator, edge_iterator> edges() {
             return boost::edges(g_);
-        }
-
-        std::pair<node_iterator, node_iterator> nodes() {
-            return boost::vertices(g_);
         }
 
         edge_map_t get_edge_map() {
