@@ -2,11 +2,24 @@
 #define __EVENT_TYPES_HPP__
 
 #include <limits>
+#include <string>
 
 #include "include.hpp"
 #include "node.hpp"
 #include "random_generator.hpp"
+#include "result.hpp"
+#include "flow_controller.hpp"
 
+#define INSTANCIATE_CLASS_NAME(X) \
+temlpate<#X>\
+std::string __class__(#X const&) {\
+    return std::string("#X");\
+}
+
+template <class etype>
+std::string __class__() {
+    return std::string();
+}
 
 template <class Event_manager>
 class Event {
@@ -21,9 +34,10 @@ class Event {
          void init(Args... params);
         virtual void update_result() = 0;
         virtual void handle_event() = 0;
+        virtual std::string __class__() = 0 const;
+        virtual void automated_update_result() = 0; 
 
         event_time_t const& immediate_handling() const {
-            //return -std::numeric_limits<event_time_t>::infinity();
             return event_manager_.get_time_elapsed();
         }
 
@@ -35,7 +49,10 @@ class Event {
             return end_event_time_;
         }
 
-        virtual void automated_update_result() {
+        virtual void post_handle() {
+        }
+
+        virtual static void register_new_result() {
         }
 
     protected:
@@ -69,6 +86,13 @@ class Specialized_event : public Event<Event_manager>{
         Specialized_event(Event_manager &event_manager, Event_issuer &event_issuer, event_time_t end_event_time, event_time_t handling_time) : Event<Event_manager>(event_manager, end_event_time, handling_time), event_issuer_(event_issuer) {}
         virtual ~Specialized_event() {}
 
+        virtual void automated_update_result() {
+            event_manager_.get_result().increase_value(__class__(*this),
+                                                       event_manager_.get_result().get_general_key());
+            event_manager_.get_result().increase_value(__class__(*this),
+                                                       event_issuer_);
+        }
+
     protected:
 
         event_issuer_t & get_event_issuer() {
@@ -82,28 +106,47 @@ class Specialized_event : public Event<Event_manager>{
 // TODO : change Node to node_key_t
 template <class Event_manager, class Event_issuer=Node<>>
 class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
+    typedef typename Event_manager::flow_key_t flow_t;
 
     public:
         Arrival_event(Event_manager &event_manager, Event_issuer &event_issuer) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, 0) {
             arrival_rate_ = event_issuer.get_arrival_rate();
             service_rate_ = event_issuer.get_service_rate();
-            this->set_end_event_time(event_manager.get_random_generator().rand_duration(service_rate_) + this->get_event_manager().get_time_elapsed());
             this->set_handling_time(event_manager.get_random_generator().next_arrival(arrival_rate_) + this->get_event_manager().get_time_elapsed());
-        }
-
-        void update_result() {
-            this->get_event_manager().get_result().increase_value(std::string("Arrival_event"), this->get_event_issuer());
+            this->set_end_event_time(event_manager.get_random_generator().rand_duration(service_rate_) + this->get_handling_time());
         }
 
         void handle_event() {
-            this->get_event_manager().template add_event<Arrival_event>(this->get_event_issuer());
+            flow_t flow;
+            if(this->get_event_manager().new_arrivals()) {
+                this->get_event_manager().template add_event<Arrival_event>(this->get_event_issuer());
+            }
+
+            Event_issuer &dst_node = this->get_event_manager().get_random_generator().get_random_exit_node(this->get_event_issuer());
+
+            try {
+                flow = this->get_event_manager().get_flow_controller().allocate_flow(this->get_event_issuer(), dst_node);
+                assert(Event_manager::flow_controller_t::Key_generator::is_valid_key(flow));
+            } catch (No_path_error e) {
+                this->get_event_manager().template add_event<Flow_allocation_failure_event>(this->get_event_issuer());
+                return;
+            }
+
+            // /!\ WARNING /!\ Make sure that success is handled before end_flow
+            // Else it will .length an unexisting flow!
+            this->get_event_manager().template add_event<Flow_allocation_success_event>(this->get_event_issuer(), flow);
+            this->get_event_manager().template add_event<End_flow_event>(this->get_event_issuer(), this->get_end_event_time(), flow);
+        }
+
+        std::string __class__() const {
+            return std::string("Arrival_event");
         }
 
     private:
         float arrival_rate_;
         float service_rate_;
 };
-
+INSTANCIATE_CLASS_NAME(Arrival_event)
 
 template <class Event_manager, class Event_issuer=Node<>>
 class End_flow_event : public Specialized_event<Event_manager, Event_issuer> {
@@ -114,17 +157,18 @@ class End_flow_event : public Specialized_event<Event_manager, Event_issuer> {
         typedef typename Event<Event_manager>::event_time_t event_time_t;
         End_flow_event(Event_manager &event_manager, Event_issuer &event_issuer, event_time_t handling_time, flow_t &flow) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, handling_time), flow_(flow) {}
 
-        void update_result() {
-            this->get_event_manager().get_result().increase_value(std::string("End_flow_event"), this->get_event_issuer());
-        }
-
         void handle_event() {
             this->get_event_manager().get_flow_controller().free_flow(flow_);
+        }
+
+        std::string __class__() const {
+            return std::string("End_flow_event");
         }
 
     private:
         flow_t flow_;
 };
+INSTANCIATE_CLASS_NAME(End_flow_event)
 
 
 template <class Event_manager, class Event_issuer>
@@ -134,13 +178,15 @@ class End_of_simulation_event : public Specialized_event<Event_manager, Event_is
 
         End_of_simulation_event(Event_manager &event_manager, Event_issuer &event_issuer, event_time_t handling_time) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, handling_time) {}
 
-        void update_result() {
-        }
-
         void handle_event() {
             this->get_event_manager().set_EOS();
         }
+
+        std::string __class__() const {
+            return std::string("End_of_simulation_event");
+        }
 };
+INSTANCIATE_CLASS_NAME(End_of_simulation_event)
 
 
 template <class Event_manager, class Event_issuer>
@@ -151,17 +197,17 @@ class Flow_allocation_success_event: public Specialized_event<Event_manager, Eve
         Flow_allocation_success_event(Event_manager &event_manager, Event_issuer &event_issuer, flow_t &flow) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, Event<Event_manager>::immediate_handling()), flow_(flow) {}
 
         void update_result() {
-            this->get_event_manager().get_result().increase_value(std::string("Flow_allocation_success_event"), this->get_event_issuer());
-            // TODO : access flow_key and flow.length 
-            //this->get_event_manager().get_result().update_computed_value(std::string("mean_nodes_per_flow"), flow);
+            this->get_event_manager().get_result().update_computed_value(std::string("mean_nodes_per_flow"), this->get_event_manager().get_flow_controller().get_flow(flow).length());
         }
 
-        void handle_event() {
+        std::string __class__() const {
+            return std::string("Flow_allocation_success_event");
         }
 
     private:
         flow_t flow_;
 };
+INSTANCIATE_CLASS_NAME(Flow_allocation_success_event)
 
 
 template <class Event_manager, class Event_issuer>
@@ -173,8 +219,12 @@ class Flow_allocation_failure_event: public Specialized_event<Event_manager, Eve
             this->get_event_manager().get_result().increase_value(std::string("Flow_allocation_failure_event"), this->get_event_issuer());
         }
 
-        void handle_event() {
+        std::string __class__() const {
+            return std::string("Flow_allocation_failure_event");
         }
 };
+INSTANCIATE_CLASS_NAME(Flow_allocation_failure_event)
+
+// TODO: User events
 
 #endif

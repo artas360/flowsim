@@ -9,7 +9,8 @@
 
 template <typename weight_t>
 struct infinity_wrapper_std {
-    weight_t operator()() {
+    // TODO test if static works
+    static weight_t operator()() {
         return std::numeric_limits<weight_t>::infinity();
     }
 };
@@ -31,7 +32,7 @@ class Edge : public Abstract_edge<flow_key_t, weight_t, flow_container_t> {
         size_t available_flows_;
         weight_t weight_, former_weight_;
         flow_container_t passing_flows_;
-        const weight_t infinite_weight_ = infinity_wrapper()();
+        const weight_t infinite_weight_ = infinity_wrapper();
 
         void switch_weight() {
             if (weight_ == infinite_weight_) {
@@ -44,6 +45,7 @@ class Edge : public Abstract_edge<flow_key_t, weight_t, flow_container_t> {
         }
 
     public:
+        // Copy constructor using operator= overload
         Edge(Edge const& edge) noexcept {
             *this = edge;
         }
@@ -88,7 +90,7 @@ class Edge : public Abstract_edge<flow_key_t, weight_t, flow_container_t> {
             ++available_flows_;
         }
 
-        // Need to be ref!
+        // Needs to be ref! for compatibility w/ topology
         weight_t const& get_weight() const {
             return weight_;
         }

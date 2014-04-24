@@ -9,6 +9,7 @@
 template <class edge_key_t, class container_t=std::vector<edge_key_t>>
 class Flow {
     public:
+        typedef typename container_t::size_type size_type;
         Flow(container_t const& edge_list) : edge_list_(edge_list) /*copy*/ {}
         Flow(container_t const&& edge_list) : edge_list_(edge_list) /*move*/ {}
 
@@ -16,7 +17,7 @@ class Flow {
             return edge_list_;
         }
 
-        typename container_t::size_type length() const {
+        typename size_type length() const {
             return edge_list_.size();
         }
 

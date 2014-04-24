@@ -24,7 +24,7 @@ class Key_generator {
             return key != not_key;
         }
 
-        static const key_t no_key() {
+        static const key_t not_key() {
             return not_key;
         }
 
@@ -37,6 +37,7 @@ template <class Event_manager, class Topology, class flow_t, class key_t=size_t,
 class Flow_controller {
     typedef typename Topology::node_key_t node_key_t;
     typedef typename Topology::edge_key_t edge_key_t;
+    typedef typename Flow_container::const_iterator const_iterator;
     public:
         Flow_controller(Topology topology) : topology_(topology),
                                              flows_(),
@@ -75,11 +76,12 @@ class Flow_controller {
                     topology_.get_edge_object(*it2).free_flow(flow_key);
                 }
                 flows_.erase(pair.first);
-                return Key_generator::no_key();
+                return Key_generator::not_key();
             }
         }
 
         virtual void free_flow(key_t flow_key) {
+            assert(Key_generator::is_valid_key(flow_key));
             typename Flow_container::iterator iter(flows_.find(flow_key));
             if (iter == flows_.end()) {
                 throw Not_registered_flow();
@@ -92,6 +94,19 @@ class Flow_controller {
             for(; it != end; ++it) {
                 topology_.get_edge_object(*it).free_flow(flow_key);
             }
+        }
+
+        virtual flow_t const& get_flow(key_t flow_key) const {
+            assert(Key_generator::is_valid_key(flow_key));
+            // TODO check if exception thrown
+            return flows_.at(flow_key);
+        }
+
+        // TODO
+        // iterator<node_key_t> cbegin() const? , REF?
+        std::pair<typename Topology::const_node_iterator, typename Topology::const_node_iterator> 
+        get_entry_nodes() const {
+            return topology_.nodes();
         }
 
     private:

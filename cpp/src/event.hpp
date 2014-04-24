@@ -54,8 +54,14 @@ class Event_manager {
             event_t *event = event_list_.top();
             time_elapsed_ = event->get_handling_time();
 
+            result_.record_value(std::string("time_elapsed"),
+                                 result_.get_general_key(),
+                                 time_elapsed_)
+
             event->handle_event();
             event->automated_update_result();
+            event->post_handle();
+
             event_list_.pop();
             allocator_.destroy(event);
         }
@@ -65,13 +71,48 @@ class Event_manager {
              event_list_.emplace(allocator_.construct<event_type_t>(*this, event_issuer, param...));
         }
 
+        void init_run() {
+            for(auto node_key: flow_controller_.get_entry_nodes()) {
+                add_event<Arrival_event>(node_key);
+            }
+
+            result_.add_computed_value(false,
+                                       std::string("Blocking_rate"),
+                                       result_t::event_division,
+                                       std::string("Flow_allocation_failure_event"),
+                                       std::string("Arrival_event"),
+                                       true);
+
+            result_.register_convergence("Blocking_rate",
+                                         convergence_number_samples_,
+                                         convergence_epsilon_);
+
+            // TODO Macro list of etypes
+            // or enum + __class__ specialazation
+            // for(class__ in enum)
+            //  class__.register_new_result(result_);
+        }
+
         void start_event_processing() {
             bool has_converged = false;
-            //long counter = 0;
+            size_t counter = 0;
+            const std::string block_rate("Blocking_rate");
+
+            self.init_run();
+
+            while(not EOS_ and not has_converged){
+                handle_next_event();
+            }
 
             // for(;;) {}
             while (not EOS_ and not has_converged) {
                 handle_next_event();
+
+                if(++counter >= convergence_check_interval_) {
+                    has_converged = result_.check_convergence(block_rate);
+                    counter = 0;
+                }
+
             }
         }
 
@@ -95,12 +136,15 @@ class Event_manager {
             return result_;
         }
 
+        inline bool new_arrivals() const {
+            return true;
+        }
+
+#if TEST_EVENT
         event_t* const& top() const {
             return event_list_.top();
         }
-
-        bool new_arrivals() const;
-
+#endif
 
     private:
         typedef FooAllocator Allocator;
@@ -112,6 +156,11 @@ class Event_manager {
         flow_controller_t & flow_controller_;
         event_time_t time_elapsed_;
         Random_generator<event_time_t> rand_generator_;
+
+        // Convergence Params
+        size_t convergence_check_interval_;
+        size_t convergence_number_samples_;
+        typename result_t::result_value_t convergence_epsilon_;
 };
 
 #endif

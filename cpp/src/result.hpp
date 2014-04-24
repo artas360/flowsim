@@ -64,6 +64,10 @@ class Result {
             results_[key][value_name] += increment;
         }
 
+        void record_value(std::string const& value_name, result_key_t const& key, result_value_t const& value) {
+            results_[key][value_name] = value;
+        }
+
         void add_computed_value(bool is_node_value, std::string const& value_key, compute_function_t compute_function, std::string const& key1, std::string const& key2, bool update_on_get=false) {
             auto f = std::bind(compute_function, std::placeholders::_1, std::placeholders::_2, key1, key2);
             function_map_.emplace(value_key, std::make_tuple(is_node_value, f, update_on_get));
