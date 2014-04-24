@@ -1,6 +1,7 @@
 from flowsim.result import Result, event_division, update_mean
 from flowsim.random_generator import Random_generator
 from flowsim.event.event_types import *
+from heapq import heappush, heappop
 
 
 class Event_manager:
@@ -51,27 +52,28 @@ class Event_manager:
 
     def handle_next_event(self):
         try:
-            event = self.event_list.pop()
+            event = heappop(self.event_list)
         except IndexError:
             self.EOS = True
             return
 
-        self.elapsed_time = event.get_handling_time()
+        # NOT USELESS, elapsed_time is used by events...
+        self.elapsed_time = event[0]
 
         self.result.record_value('elapsed_time',
                                  "general",
                                  self.elapsed_time)
 
-        event.handle_event()
-        event.automated_update_result()
-        event.post_handle()
+        event[1].handle_event()
+        event[1].automated_update_result()
+        event[1].post_handle()
 
     # TODO profile
     def add_event(self, Event_type, event_issuer, **kwargs):
-        if not issubclass(Event_type, Event):
-            raise TypeError
-        self.event_list.append(Event_type(self, event_issuer, **kwargs))
-        self.event_list.sort(key=lambda x: x.get_handling_time(), reverse=True)
+        assert(issubclass(Event_type, Event))
+        new_event = Event_type(self, event_issuer, **kwargs)
+        heappush(self.event_list,
+                 (new_event.handling_time, new_event))
 
     def init_run(self):
         for node in self.flow_controller.get_entry_nodes():

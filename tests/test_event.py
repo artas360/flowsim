@@ -6,6 +6,7 @@ from flowsim.event.event_types import *
 from flowsim.random_generator import Random_generator
 from flowsim.event.event import Event_manager, Event
 from flowsim.result import Result
+from heapq import heappop
 
 
 class Simu(object):
@@ -125,10 +126,10 @@ class Test_Event_manager(TestCase):
 
         event_manager.add_event(Arrival_Event,
                                 Node())
-        assert isinstance(event_manager.event_list.pop(),
+        assert isinstance(heappop(event_manager.event_list)[1],
                           Arrival_Event)
 
-        self.assertRaises(TypeError,
+        self.assertRaises(AssertionError,
                           event_manager.add_event,
                           str, event_manager.flow_controller)
 
@@ -138,7 +139,7 @@ class Test_Event_manager(TestCase):
 
         type_list = self.create_events(event_manager)
 
-        [type_list.index(type(event)) for event in event_manager.event_list]
+        [type_list.index(type(e[1])) for e in event_manager.event_list]
 
     def test_user_event_types(self):
         user_event = {"type": "arrival_burst_event",
@@ -165,9 +166,12 @@ class Test_Event_manager(TestCase):
 
         type_list = self.create_events(event_manager)
 
-        for i in xrange(len(event_manager.event_list)-1):
-            assert event_manager.event_list[i].handling_time >=\
-                event_manager.event_list[i].handling_time
+        tmp = None
+        tmp2 = heappop(event_manager.event_list)[1]
+        for i in xrange(len(event_manager.event_list)):
+            tmp = tmp2
+            tmp2 = heappop(event_manager.event_list)[1]
+            self.assertTrue(tmp2.handling_time >= tmp.handling_time)
 
     def test_sample_event(self):
         event_manager = Event_manager(Simu(), self.rand_gen)
