@@ -16,7 +16,9 @@
 template<typename sample_value_t>
 class sample_container {
     public:
-        sample_container(size_t number_samples, sample_value_t epsilon) : counter_(0), epsilon_(epsilon), samples_(infinity_, number_samples) {}
+        sample_container(size_t number_samples, sample_value_t epsilon) : counter_(0),
+                                                                          epsilon_(epsilon),
+                                                                          samples_(infinity_, number_samples) {}
 
         void update_samples(sample_value_t const& sample) {
             samples_[counter_++] = sample;
@@ -38,8 +40,8 @@ class sample_container {
         sample_value_t epsilon_;
         std::valarray<sample_value_t> samples_;
         const sample_value_t infinity_ = std::numeric_limits<sample_value_t>::has_quiet_NaN ?
-                                                std::numeric_limits<sample_value_t>::quiet_NaN() :
-                                                std::numeric_limits<sample_value_t>::max();
+                                            std::numeric_limits<sample_value_t>::quiet_NaN() :
+                                            std::numeric_limits<sample_value_t>::max();
 };
 
 
@@ -89,7 +91,6 @@ class Result {
         }
 
         result_value_t const& get_computed_value(result_key_t const& result_key, std::string const& value_key) {
-            std::cerr << "Bite" << std::endl;
             if(std::get<2>(function_map_[value_key]))
                 return (results_[result_key][value_key] = std::get<1>(function_map_[value_key])(results_[result_key], 0));
             else
@@ -98,9 +99,9 @@ class Result {
 
         void register_convergence(std::string const& value_key, float epsilon, size_t number_samples) {
 #ifdef __GNUC__
-                convergence_map_.emplace(value_key, sample_container_t(number_samples, epsilon));
+            convergence_map_.emplace(value_key, sample_container_t(number_samples, epsilon));
 #else
-                convergence_map_.emplace(value_key, number_samples, epsilon);
+            convergence_map_.emplace(value_key, number_samples, epsilon);
 #endif // __GNUC__
         }
 

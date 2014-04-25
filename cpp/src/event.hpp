@@ -38,7 +38,10 @@ class Event_manager {
                                                                                        EOS_(false),
                                                                                        result_(),
                                                                                        flow_controller_(flow_controller),
-                                                                                       time_elapsed_(0){
+                                                                                       time_elapsed_(0),
+                                                                                       convergence_check_interval_(1000),
+                                                                                       convergence_number_samples_(10),
+                                                                                       convergence_epsilon_(1e-3){
         }
 
         ~Event_manager() {
@@ -96,7 +99,6 @@ class Event_manager {
             result_.register_convergence(std::string("Blocking_rate"),
                                          convergence_epsilon_,
                                          convergence_number_samples_);
-            std::cerr << "Bite." << std::endl;
 
             // TODO Macro list of etypes
             // or enum + __class__ specialazation
@@ -296,7 +298,6 @@ int test_event() {
     FTEST(evt.top()->get_handling_time() == evt.get_time_elapsed());
 
     evt.start_event_processing();
-    std::cerr <<"BITE"<< std::endl;
     // Check with valgrind that if was free'd
     evt.add_event<decltype(b)>(node);
 
