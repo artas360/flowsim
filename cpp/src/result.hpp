@@ -1,16 +1,17 @@
 #ifndef __RESULT_HPP__
 #define __RESULT_HPP__
 
-#include <string>
+#include <cmath>
 #include <functional>
 #include <limits>
+#include <ostream>
 #include <string>
-#include <iostream>
-#include <cmath>
+#include <unordered_map>
 #include <valarray>
+
 #include "include.hpp"
 
-#include <unordered_map>
+
 
 template<typename sample_value_t>
 class sample_container {
@@ -24,7 +25,7 @@ class sample_container {
 
         sample_value_t standard_deviation() {
             // probably not optimal but oneliner!
-            return sqrt((pow(samples_, 2).sum() / samples_.size()) - pow(samples_.sum() / samples_.size(), 2));
+            return sqrt((std::pow(samples_, (float)2).sum() / samples_.size()) - pow(samples_.sum() / samples_.size(), 2));
         }
 
         bool has_converged() {
@@ -36,18 +37,22 @@ class sample_container {
         size_t counter_;
         sample_value_t epsilon_;
         std::valarray<sample_value_t> samples_;
-        const sample_value_t infinity_ = std::numeric_limits<sample_value_t>::has_quiet_NaN ? 
+        const sample_value_t infinity_ = std::numeric_limits<sample_value_t>::has_quiet_NaN ?
                                                 std::numeric_limits<sample_value_t>::quiet_NaN() :
                                                 std::numeric_limits<sample_value_t>::max();
 };
 
 
 // result_value_t should be default constructed at 0
-template <class result_key_t, typename result_value_t=float, class result_container_t=std::unordered_map<result_key_t, std::unordered_map<std::string, result_value_t>>>
+template <class result_key_t,
+          typename result_value_t=float,
+          class result_container_t=std::unordered_map<result_key_t, std::unordered_map<std::string, result_value_t>>,
+          class sample_container_t=sample_container<result_value_t>>
 class Result {
 
     public:
 
+        typedef result_value_t value_t;
         // General results stored in general_key_
         // typedef std::unordered_map<std::string, result_value_t> general_results_t;
         typedef typename result_container_t::mapped_type submap_t;
@@ -55,7 +60,7 @@ class Result {
         typedef typename std::function<result_value_t(submap_t const&, result_value_t const&, std::string, std::string)> compute_function_t;
         typedef typename std::function<result_value_t(submap_t const&, result_value_t const&)> binded_compute_function_t;
         typedef std::unordered_map<std::string, std::tuple<bool, binded_compute_function_t, bool>> function_map_t;
-        typedef std::unordered_map<std::string, sample_container<result_value_t>> convergence_map_t;
+        typedef std::unordered_map<std::string, sample_container_t> convergence_map_t;
 
         Result() : results_() {
         }
@@ -84,6 +89,7 @@ class Result {
         }
 
         result_value_t const& get_computed_value(result_key_t const& result_key, std::string const& value_key) {
+            std::cerr << "Bite" << std::endl;
             if(std::get<2>(function_map_[value_key]))
                 return (results_[result_key][value_key] = std::get<1>(function_map_[value_key])(results_[result_key], 0));
             else
@@ -91,7 +97,11 @@ class Result {
         }
 
         void register_convergence(std::string const& value_key, float epsilon, size_t number_samples) {
+#ifdef __GNUC__
+                convergence_map_.emplace(value_key, sample_container_t(number_samples, epsilon));
+#else
                 convergence_map_.emplace(value_key, number_samples, epsilon);
+#endif // __GNUC__
         }
 
         bool check_convergence(std::string const& value_key) {
@@ -146,8 +156,13 @@ class Result {
         }
 
         static result_value_t event_division(submap_t const& submap, result_value_t const&, std::string const& numerator_key, std::string const& denominator_key) {
-            assert(submap[denominator_key] != 0);
-            return submap[numerator_key] / submap[denominator_key];
+            try {
+                assert(submap.at(denominator_key) != 0);
+                return submap.at(numerator_key) / submap.at(denominator_key);
+            } catch (std::out_of_range) {
+                assert(std::numeric_limits<result_value_t>::has_quiet_NaN);
+                return std::numeric_limits<result_value_t>::quiet_NaN();
+            }
         }
 
         static result_value_t update_mean(submap_t const& submap, result_value_t const& new_element, std::string const& mean_key, std::string const& denominator_key) {
@@ -174,7 +189,7 @@ std::ostream& operator<<(std::ostream &out, Result<result_key_t, result_value_t,
     return results.stream_results(out);
 }
 
-#if TEST
+#if TEST_RESULT
 
 float mean(std::valarray<float>& values) {
     return values.sum() / values.size();
@@ -193,6 +208,8 @@ int test_result() {
     typename Result<int>::compute_function_t fct = std::bind(&Result<int>::process_nodes_value, &result, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, mean);
     result.add_computed_value(false, std::string("Block"), fct, std::string("mean"), std::string(), true);
     result.update_computed_value(std::string("mean"), 1, 1);
+    result.register_convergence(std::string("Block"), .03, 6);
+    result.check_convergence(std::string("Block"));
     std::cout << "printing results" << std::endl;
     std::cout << result << std::endl;
     result.increase_value("counter", 1);

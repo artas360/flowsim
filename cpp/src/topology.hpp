@@ -68,6 +68,8 @@ class Topology {
         typedef typename Edge::infinity_wrapper infinity_wrapper;
         typedef typename Node::rate_t rate_t;
         typedef typename Node::name_t node_name_t;
+        typedef typename Node node_t;
+        typedef typename Edge edge_t;
 
     private:
         Graph g_;
@@ -176,6 +178,14 @@ class Topology {
             return get_edge_object(edge_key);
         }
 
+        Node& get_node_object(node_key_t const& node_key) {
+            return boost::get(boost::vertex_obj2, g_, node_key);
+        }
+
+        Node const& get_node_object(node_key_t const& node_key) const {
+            return get_node_object(node_key);
+        }
+
         void dump_graphviz(std::ostream& out) {
             boost::write_graphviz(out, g_);
         }
@@ -243,7 +253,7 @@ struct Node {
     rate_t arr, serv;
     name_t name_;
     Node() {}
-    Node(rate_t arrival_rate, rate_t service_rate, name_t const& name = name_t()) : a(counter++), arr(arrival_rate), serv(service_rate), name_(name) {} 
+    Node(rate_t arrival_rate, rate_t service_rate, name_t const& name = name_t()) : a(counter++), arr(arrival_rate), serv(service_rate), name_(name) {}
     Node(Node const& other) : a(other.a), arr(other.arr), serv(other.serv) {}
     id_t get_number() {return a;}
 };
@@ -292,7 +302,7 @@ int test_topology() {
     topo2.import_topology_from_description(description.cbegin(), description.cend(), .5, .6);
     auto edge_map2 = topo2.get_edge_map();
 //    auto node_map2 = topo2.get_node_map();
-    
+
     typedef Topology<Node, Edge>::edge_iterator edge_iter;
 //    edge_iter ei, ei_end;
 //    for (std::tie(ei, ei_end) = topo2.edges(); ei != ei_end; ++ei)

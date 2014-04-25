@@ -3,14 +3,17 @@
 
 #include <queue>
 #include <vector>
+#include <type_traits>
 
 #include "include.hpp"
 #include "allocator.hpp"
+#include "random_generator.hpp"
+#include "result.hpp"
+#include "flow_controller.hpp"
 #include "event_types.hpp"
-#include "random_generator.cpp"
 
 
-// Reversed order comparasion
+// Reversed order comparison
 template <typename T1, typename T2>
 struct event_comparison {
     bool operator() (T1 *lhs, T2 *rhs) const {
@@ -23,12 +26,12 @@ class Event_manager {
     public:
         typedef float event_time_t;
         typedef Event<Event_manager<Simulation>> event_t;
-        // Can't iterate over std::priority_queue
         typedef std::priority_queue<event_t*, std::vector<event_t*>, event_comparison<event_t, event_t>> event_queue;
         typedef typename Simulation::result_t result_t;
         typedef typename Simulation::flow_controller_t flow_controller_t;
         typedef typename Simulation::flow_key_t flow_key_t;
         typedef typename Simulation::topology_t::node_key_t node_key_t;
+        typedef typename Simulation::topology_t::node_t node_t;
 
         Event_manager(typename Simulation::flow_controller_t & flow_controller) : allocator_(),
                                                                                        event_list_(),
@@ -73,8 +76,14 @@ class Event_manager {
         }
 
         void init_run() {
-            for(auto node_key: flow_controller_.get_entry_nodes()) {
-                add_event<Arrival_event>(node_key);
+            typedef std::pair<node_key_t const&, node_t const&> node_key_obj;
+
+            auto bounds = flow_controller_.get_entry_nodes();
+            for(auto node_key = std::get<0>(bounds);
+                node_key != std::get<1>(bounds);
+                ++node_key) {
+                node_key_obj tmp = std::make_pair(*node_key, flow_controller_.get_topology().get_node_object(*node_key));
+                add_event<Arrival_event<Event_manager<Simulation>, node_key_obj&>>(tmp);
             }
 
             result_.add_computed_value(false,
@@ -84,9 +93,10 @@ class Event_manager {
                                        std::string("Arrival_event"),
                                        true);
 
-            result_.register_convergence("Blocking_rate",
-                                         convergence_number_samples_,
-                                         convergence_epsilon_);
+            result_.register_convergence(std::string("Blocking_rate"),
+                                         convergence_epsilon_,
+                                         convergence_number_samples_);
+            std::cerr << "Bite." << std::endl;
 
             // TODO Macro list of etypes
             // or enum + __class__ specialazation
@@ -98,7 +108,6 @@ class Event_manager {
             bool has_converged = false;
             size_t counter = 0;
             const std::string block_rate("Blocking_rate");
-
             init_run();
 
             while(not EOS_ and not has_converged){
@@ -141,7 +150,7 @@ class Event_manager {
             node_key_t node_key;
 
             do{
-                node_key = flow_controller_.get_topology().get_random_entry_node(rand_generator_.rand_int());
+                node_key = flow_controller_.get_topology().get_random_exit_node(rand_generator_.rand_int());
             } while(node_key == different_from and --loop_prevention);
 
             if(not loop_prevention)
@@ -152,6 +161,10 @@ class Event_manager {
 
         inline bool new_arrivals() const {
             return true;
+        }
+
+        event_time_t const& get_immediate_handling() {
+            return time_elapsed_;
         }
 
 #if TEST_EVENT
@@ -174,77 +187,119 @@ class Event_manager {
         // Convergence Params
         size_t convergence_check_interval_;
         size_t convergence_number_samples_;
-        typename result_t::result_value_t convergence_epsilon_;
+        typename result_t::value_t convergence_epsilon_;
 };
 
 #endif
 
 #if TEST_EVENT
 
-template <class Simulation>
-std::ostream& operator<< (std::ostream &out, Event_manager<Simulation> const& event_manager) {
-    out << "reading events" << std::endl;
-    for(auto it: event_manager) {
-        out << it->get_handling_time() << std::endl;
-    }
-    out << "Top event" << std::endl;
-    out << event_manager.top()->get_handling_time() << std::endl;
-    return out;
-}
-
-struct FooFlowKey{
-};
-
 struct FooResult {
     typedef float result_value_t;
     void increase_value(std::string, Node<>) {
     }
-};
-
-struct FooFlow {
-};
-
-struct FooFlowController {
-    void free_flow(FooFlowKey) {
+    bool check_convergence(std::string const&) {
+        return false;
+    }
+    std::string get_general_key() {
+        return std::string();
     }
 };
 
 struct FooTopology {
-    typedef int node_key_t;
+    FooTopology() : node(.1, .2){
+    }
+    typedef size_t node_key_t;
+    typedef Node<> node_t;
+    typedef typename std::vector<node_key_t>::const_iterator citerator;
+    node_key_t get_random_exit_node(size_t){
+        return n;
+    }
+    Node<> const& get_node_object(node_key_t) {
+        return node;
+    }
+
+    std::vector<node_key_t> topo;
+    node_key_t n;
+    Node<> node;
 };
 
+struct FooFlow{
+    size_t length(){
+        return 1;
+    }
+};
+
+template <class Key_generator=Key_generator<size_t>>
+struct FooFlowController {
+    typedef size_t FooFlowKey;
+    typedef Key_generator key_generator_t;
+    FooFlowController(){
+    }
+    void free_flow(FooFlowKey) {
+    }
+    FooTopology &get_topology() {
+        return footopo;
+    }
+    std::pair<FooTopology::citerator, FooTopology::citerator> get_entry_nodes() const {
+        return std::make_pair(footopo.topo.cbegin(), footopo.topo.cend());
+    }
+    FooFlow & get_flow(FooFlowKey){
+        return flow;
+    }
+    size_t allocate_flow(typename FooTopology::node_key_t, typename FooTopology::node_key_t) {
+        return 1;
+    }
+    FooTopology footopo;
+    FooFlow flow;
+
+};
+
+
 struct FooSimulation {
-    typedef FooFlowKey flow_key_t;
-    typedef FooResult result_t;
-    typedef FooFlowController flow_controller_t;
+    typedef size_t flow_key_t;
+    typedef Result<size_t> result_t;
+    typedef FooFlowController<> flow_controller_t;
     typedef FooTopology topology_t;
 };
 
 int test_event() {
-    FooFlowController ffc;
+    typedef size_t FooFlowKey;
+    typedef std::pair<typename FooTopology::node_key_t, Node<>> pNode;
+    FooFlowController<> ffc;
     Event_manager<FooSimulation> evt(ffc);
-    Node<> node(0.1, 0.2);
+    Node<> object_node(0.1, 0.2);
+    pNode node(std::make_pair(0, object_node));
     FooFlowKey flow;
-    Arrival_event<decltype(evt), Node<>> b(evt, node);
-    End_flow_event<decltype(evt), Node<>> c(evt, node, 10, flow);
-    End_of_simulation_event<decltype(evt), Node<>> d(evt, node, 1);
-    Flow_allocation_success_event<decltype(evt), Node<>> e(evt, node, flow);
-    Flow_allocation_failure_event<decltype(evt), Node<>> f(evt, node);
+    Arrival_event<decltype(evt), pNode> b(evt, node);
+    FTEST(b.get_handling_time() > 0);
+    End_flow_event<decltype(evt), pNode> c(evt, node, 10, flow);
+    FTEST(c.get_handling_time() == 10);
+    End_of_simulation_event<decltype(evt), pNode> d(evt, node, 1);
+    FTEST(d.get_handling_time() == 1);
+    Flow_allocation_success_event<decltype(evt), pNode> e(evt, node, flow);
+    FTEST(e.get_handling_time() == evt.get_time_elapsed());
+    Flow_allocation_failure_event<decltype(evt), pNode> f(evt, node);
+    FTEST(f.get_handling_time() == evt.get_time_elapsed());
 
-    evt.add_event<decltype(c)>(node, 10, flow); 
+    evt.add_event<decltype(c)>(node, 10, flow);
     FTEST(evt.top()->get_handling_time() == 10);
-    evt.add_event<decltype(d)>(node, 1); 
+    evt.add_event<decltype(d)>(node, 1);
     FTEST(evt.top()->get_handling_time() == 1);
-    evt.add_event<decltype(b)>(node); 
-    FTEST(evt.top()->get_handling_time() == 0);
-    evt.add_event<decltype(e)>(node, flow); 
-    FTEST(evt.top()->get_handling_time() == decltype(evt)::event_t::immediate_handling());
-    evt.add_event<decltype(f)>(node); 
-    FTEST(evt.top()->get_handling_time() == decltype(evt)::event_t::immediate_handling());
+    evt.add_event<decltype(b)>(node);
+    Arrival_event<decltype(evt), pNode> z(evt, node);
+    // Arrival_event has a random handling time....
+    FTEST(evt.top()->get_handling_time() > 0);
+    evt.add_event<decltype(e)>(node, flow);
+    FTEST(evt.top()->get_handling_time() == evt.get_time_elapsed());
+    evt.add_event<decltype(f)>(node);
+    FTEST(evt.top()->get_handling_time() == evt.get_time_elapsed());
+
     evt.start_event_processing();
+    std::cerr <<"BITE"<< std::endl;
     // Check with valgrind that if was free'd
-    evt.add_event<decltype(b)>(node); 
-    
+    evt.add_event<decltype(b)>(node);
+
 
     return EXIT_SUCCESS;
 }
@@ -253,4 +308,4 @@ int main() {
     return test_event();
 }
 
-#endif 
+#endif

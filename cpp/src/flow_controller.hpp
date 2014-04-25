@@ -39,6 +39,7 @@ class Flow_controller {
     typedef typename Topology::edge_key_t edge_key_t;
     typedef typename Flow_container::const_iterator const_iterator;
     public:
+        typedef Key_generator key_generator_t;
         Flow_controller(Topology topology) : topology_(topology),
                                              flows_(),
                                              key_gen_() {
@@ -104,7 +105,7 @@ class Flow_controller {
 
         // TODO
         // iterator<node_key_t> cbegin() const? , REF?
-        std::pair<typename Topology::const_node_iterator, typename Topology::const_node_iterator> 
+        std::pair<typename Topology::const_node_iterator, typename Topology::const_node_iterator>
         get_entry_nodes() const {
             return topology_.nodes();
         }
@@ -130,7 +131,7 @@ class FooTopology{
         typedef size_t node_key_t;
         typedef size_t edge_key_t;
         typedef std::vector<edge_key_t> path_t;
-        
+
         path_t shortest_path(node_key_t const & src, node_key_t const& dst) {
             path_t path = {src, dst};
             return path;
