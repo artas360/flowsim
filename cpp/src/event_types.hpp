@@ -74,10 +74,13 @@ template <class Event_manager, class Event_issuer>
 class Specialized_event : public Event<Event_manager>{
 
     public:
-        typedef Event_issuer event_issuer_t;
+        typedef typename std::remove_reference<Event_issuer>::type event_issuer_t;
         typedef typename Event<Event_manager>::event_time_t event_time_t;
 
-        Specialized_event(Event_manager &event_manager, Event_issuer const& event_issuer, event_time_t end_event_time, event_time_t handling_time) : Event<Event_manager>(event_manager, end_event_time, handling_time), event_issuer_(event_issuer) {}
+        Specialized_event(Event_manager &event_manager, Event_issuer const& event_issuer, event_time_t end_event_time, event_time_t handling_time) : Event<Event_manager>(event_manager, end_event_time, handling_time), event_issuer_(event_issuer) {
+            std::cerr << "Spec_eve passed" << std::get<0>(event_issuer) << std::endl;
+            std::cerr << "Spec_eve Local" << std::get<0>(event_issuer_) << std::endl;
+        }
         virtual ~Specialized_event() {}
 
         virtual void automated_update_result() {
@@ -91,15 +94,17 @@ class Specialized_event : public Event<Event_manager>{
             return std::string("End_flow_event");
         }
 
-    protected:
+    // TODO  protected
 
-        event_issuer_t & get_event_issuer() {
+    public:
+
+        event_issuer_t const& get_event_issuer() {
             return event_issuer_;
         }
 
     private:
         // Not ref for storing std::pair
-        event_issuer_t event_issuer_;
+        const event_issuer_t event_issuer_;
 };
 
 
@@ -199,6 +204,9 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
 
     public:
         Arrival_event(Event_manager &event_manager, Event_issuer const& event_issuer) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, 0) {
+            std::cerr << "\nBuilding " << __class__() << " at " << std::hex << this << std::dec << std::endl;
+            std::cerr << "Arr event passed " << std::get<0>(event_issuer) << std::endl;
+            std::cerr << "Arr event local " << std::get<0>(this->get_event_issuer()) << std::endl;
             arrival_rate_ = std::get<1>(event_issuer).get_arrival_rate();
             service_rate_ = std::get<1>(event_issuer).get_service_rate();
             this->set_handling_time(event_manager.get_random_generator().next_arrival(arrival_rate_) + this->get_event_manager().get_time_elapsed());
@@ -206,6 +214,8 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
         }
 
         void handle_event() {
+            std::cerr << "Handling event " << __class__() << " at " << std::hex << this << std::dec << std::endl;
+            std::cerr << "Passing to child local " << std::get<0>(this->get_event_issuer()) << std::endl;
             flow_t flow;
             const typename Event_manager::node_key_t node_key = std::get<0>(this->get_event_issuer());
             if(this->get_event_manager().new_arrivals()) {

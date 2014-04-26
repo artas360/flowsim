@@ -10,7 +10,7 @@
 template <typename weight_t>
 struct infinity_wrapper_std {
     // TODO test if static works
-    static weight_t operator()() {
+    weight_t operator()() {
         return std::numeric_limits<weight_t>::infinity();
     }
 };
@@ -25,14 +25,17 @@ class Abstract_edge {
 };
 
 // FIXME? use std::remove_reference?
-template<class flow_key_t, class weight_t=float, class infinity_wrapper=infinity_wrapper_std<weight_t>, class flow_container_t=std::list<flow_key_t>>
-class Edge : public Abstract_edge<flow_key_t, weight_t, flow_container_t> {
+template<class flow_key_t, class _weight=float, class _infinity_wrapper=infinity_wrapper_std<_weight>, class flow_container_t=std::list<flow_key_t>>
+class Edge : public Abstract_edge<flow_key_t, _weight, flow_container_t> {
+    public:
+        typedef _weight weight_t;
+        typedef _infinity_wrapper infinity_wrapper_t;
     private:
         size_t max_flows_;
         size_t available_flows_;
         weight_t weight_, former_weight_;
         flow_container_t passing_flows_;
-        const weight_t infinite_weight_ = infinity_wrapper();
+        const weight_t infinite_weight_ = infinity_wrapper_t()();
 
         void switch_weight() {
             if (weight_ == infinite_weight_) {
@@ -102,7 +105,7 @@ class Edge : public Abstract_edge<flow_key_t, weight_t, flow_container_t> {
 
 #endif
 
-#if TEST
+#if TEST_EDGE
 
 #include <iostream>
 

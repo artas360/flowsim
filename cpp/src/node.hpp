@@ -16,12 +16,16 @@ class Abstract_node {
         virtual rate_t const& get_service_rate() const = 0;
 };
 
-template <typename rate_t=float, typename name_t=std::string, typename id_t=size_t>
-class Node : public Abstract_node<rate_t, name_t, id_t> {
+template <typename _rate_t=float, typename _name_t=std::string, typename _id_t=size_t>
+class Node : public Abstract_node<_rate_t, _name_t, _id_t> {
     // TODO initialize somewhere
-    static id_t counter_;
+    public:
+        typedef _rate_t rate_t;
+        typedef _name_t name_t;
+        typedef _id_t id_t;
 
     private:
+        static id_t counter_;
         id_t number_;
         rate_t arrival_rate_;
         rate_t service_rate_;

@@ -21,27 +21,27 @@ struct event_comparison {
     }
 };
 
-template <class Simulation>
+template <class Flow_controller, class time=float, class result=Result<float>>
 class Event_manager {
     public:
-        typedef float event_time_t;
-        typedef Event<Event_manager<Simulation>> event_t;
+        typedef time event_time_t;
+        typedef result result_t;
+        typedef Flow_controller flow_controller_t;
+        typedef typename flow_controller_t::flow_key_t flow_key_t;
+        typedef typename flow_controller_t::topology_t::node_key_t node_key_t;
+        typedef typename flow_controller_t::topology_t::node_t node_t;
+        typedef Event<Event_manager<flow_controller_t, event_time_t, result_t>> event_t;
         typedef std::priority_queue<event_t*, std::vector<event_t*>, event_comparison<event_t, event_t>> event_queue;
-        typedef typename Simulation::result_t result_t;
-        typedef typename Simulation::flow_controller_t flow_controller_t;
-        typedef typename Simulation::flow_key_t flow_key_t;
-        typedef typename Simulation::topology_t::node_key_t node_key_t;
-        typedef typename Simulation::topology_t::node_t node_t;
 
-        Event_manager(typename Simulation::flow_controller_t & flow_controller) : allocator_(),
-                                                                                       event_list_(),
-                                                                                       EOS_(false),
-                                                                                       result_(),
-                                                                                       flow_controller_(flow_controller),
-                                                                                       time_elapsed_(0),
-                                                                                       convergence_check_interval_(1000),
-                                                                                       convergence_number_samples_(10),
-                                                                                       convergence_epsilon_(1e-3){
+        Event_manager(flow_controller_t & flow_controller) : allocator_(),
+                                                             event_list_(),
+                                                             EOS_(false),
+                                                             result_(),
+                                                             flow_controller_(flow_controller),
+                                                             time_elapsed_(0),
+                                                             convergence_check_interval_(1000),
+                                                             convergence_number_samples_(10),
+                                                             convergence_epsilon_(1e-3){
         }
 
         ~Event_manager() {
@@ -74,7 +74,8 @@ class Event_manager {
         }
 
         template <typename event_type_t, typename... Args>
-         void add_event(typename event_type_t::event_issuer_t &event_issuer, Args... param) {
+         void add_event(typename event_type_t::event_issuer_t const& event_issuer, Args... param) {
+             std::cerr << "Adding Event with issuer " << event_issuer.first << std::endl;
              event_list_.emplace(allocator_.construct<event_type_t>(*this, event_issuer, param...));
         }
 
@@ -85,8 +86,8 @@ class Event_manager {
             for(auto node_key = std::get<0>(bounds);
                 node_key != std::get<1>(bounds);
                 ++node_key) {
-                node_key_obj tmp = std::make_pair(*node_key, flow_controller_.get_topology().get_node_object(*node_key));
-                add_event<Arrival_event<Event_manager<Simulation>, node_key_obj&>>(tmp);
+                const node_key_obj tmp = std::make_pair(*node_key, flow_controller_.get_topology().get_node_object(*node_key));
+                add_event<Arrival_event<Event_manager<flow_controller_t, event_time_t, result_t>, node_key_obj>>(tmp);
             }
 
             result_.add_computed_value(false,
@@ -143,7 +144,7 @@ class Event_manager {
             return flow_controller_;
         }
 
-        typename Simulation::result_t & get_result() {
+        result_t & get_result() {
             return result_;
         }
 

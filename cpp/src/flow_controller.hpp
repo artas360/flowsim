@@ -33,14 +33,16 @@ class Key_generator {
         static const key_t no_key = 0;
 };
 
-template <class Event_manager, class Topology, class flow_t, class key_t=size_t, class Flow_container = std::unordered_map<key_t, flow_t>, class Key_generator=Key_generator<key_t>>
+template <class Topology, class flow_t, class key_t=size_t, class Flow_container = std::unordered_map<key_t, flow_t>, class Key_generator=Key_generator<key_t>>
 class Flow_controller {
-    typedef typename Topology::node_key_t node_key_t;
-    typedef typename Topology::edge_key_t edge_key_t;
-    typedef typename Flow_container::const_iterator const_iterator;
     public:
+        typedef key_t flow_key_t;
+        typedef Topology topology_t;
         typedef Key_generator key_generator_t;
-        Flow_controller(Topology topology) : topology_(topology),
+        typedef typename Topology::node_key_t node_key_t;
+        typedef typename Topology::edge_key_t edge_key_t;
+        typedef typename Flow_container::const_iterator const_iterator;
+        Flow_controller(Topology &topology) : topology_(topology),
                                              flows_(),
                                              key_gen_() {
         }
@@ -58,7 +60,7 @@ class Flow_controller {
             }
 
             // Trying to reserve Edge ressources along the path
-            typename flow_t::container_t::const_iterator it((*(pair.first)).second.get_edges().cbegin()),
+            typename flow_t::const_iterator it((*(pair.first)).second.get_edges().cbegin()),
                                                          end((*(pair.first)).second.get_edges().cend());
 
             try {
@@ -72,7 +74,7 @@ class Flow_controller {
             } catch (Ressource_allocation_error e) {
                 // Reverting changes if something wrong happened
                 // Should not happen since shortest_path returns allocable edges
-                typename flow_t::container_t::const_iterator it2((*(pair.first)).second.get_edges().cbegin());
+                typename flow_t::const_iterator it2((*(pair.first)).second.get_edges().cbegin());
                 for(; it2 != it; ++it2) {
                     topology_.get_edge_object(*it2).free_flow(flow_key);
                 }
@@ -88,8 +90,8 @@ class Flow_controller {
                 throw Not_registered_flow();
             }
 
-            typename flow_t::container_t::const_iterator it((*iter).second.get_edges().cbegin()),
-                                                         end((*iter).second.get_edges().cend());
+            typename flow_t::const_iterator it((*iter).second.get_edges().cbegin()),
+                                            end((*iter).second.get_edges().cend());
 
             // freeing edges in flow
             for(; it != end; ++it) {
@@ -105,13 +107,17 @@ class Flow_controller {
 
         // TODO
         // iterator<node_key_t> cbegin() const? , REF?
-        std::pair<typename Topology::const_node_iterator, typename Topology::const_node_iterator>
+        std::pair<typename topology_t::node_iterator, typename topology_t::node_iterator>
         get_entry_nodes() const {
             return topology_.nodes();
         }
 
+        topology_t const& get_topology() const {
+            return topology_;
+        }
+
     private:
-        Topology topology_;
+        Topology &topology_;
         Flow_container flows_;
         Key_generator key_gen_;
 };

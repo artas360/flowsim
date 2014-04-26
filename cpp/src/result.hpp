@@ -147,6 +147,7 @@ class Result {
                 return results_[result_key][value_name];
         }
 
+        // Can't be const because get can reevaluate a value
         std::ostream& stream_results(std::ostream &out) {
             for(auto it: results_) {
                 std::cout << "Holder " << std::get<0>(it) << std::endl;

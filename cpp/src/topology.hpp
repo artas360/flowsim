@@ -65,15 +65,15 @@ class Topology {
         typedef edge_descriptor edge_key_t;
         typedef vertex_descriptor node_key_t;
         typedef std::vector<edge_key_t> path_t;
-        typedef typename Edge::infinity_wrapper infinity_wrapper;
+        typedef typename Edge::infinity_wrapper_t infinity_wrapper_t;
         typedef typename Node::rate_t rate_t;
         typedef typename Node::name_t node_name_t;
-        typedef typename Node node_t;
-        typedef typename Edge edge_t;
+        typedef Node node_t;
+        typedef Edge edge_t;
 
     private:
         Graph g_;
-        const typename Edge::weight_t infinity_ = infinity_wrapper()();
+        const typename Edge::weight_t infinity_ = infinity_wrapper_t()();
 
     public:
         Topology() : g_() {
@@ -183,7 +183,7 @@ class Topology {
         }
 
         Node const& get_node_object(node_key_t const& node_key) const {
-            return get_node_object(node_key);
+            return boost::get(boost::vertex_obj2, g_, node_key);
         }
 
         void dump_graphviz(std::ostream& out) {
@@ -194,11 +194,11 @@ class Topology {
         // void set_edge_unavailable(node_key_t const& src, node_key_t const& dst);
         // void free_edge(node_key_t const& node1, node_key_t const& node2);
 
-        node_key_t get_random_entry_node(size_t number) {
+        node_key_t get_random_entry_node(size_t number) const {
             return *(boost::vertices(g_).first + (number % num_vertices(g_)));
         }
 
-        node_key_t get_random_exit_node(size_t number) {
+        node_key_t get_random_exit_node(size_t number) const {
             return *(boost::vertices(g_).first + (number % num_vertices(g_)));
         }
 
@@ -243,75 +243,81 @@ container_t torus2D(size_t y, size_t x, size_t ) {
 #include <limits>
 #include <sstream>
 #include <fstream>
+#include "node.hpp"
+#include "edge.hpp"
 
-struct Node {
-    typedef int id_t;
-    typedef float rate_t;
-    typedef int name_t;
-    static int counter;
-    id_t a;
-    rate_t arr, serv;
-    name_t name_;
-    Node() {}
-    Node(rate_t arrival_rate, rate_t service_rate, name_t const& name = name_t()) : a(counter++), arr(arrival_rate), serv(service_rate), name_(name) {}
-    Node(Node const& other) : a(other.a), arr(other.arr), serv(other.serv) {}
-    id_t get_number() {return a;}
-};
-int Node::counter = 0;
+//struct Node {
+//    typedef int id_t;
+//    typedef float rate_t;
+//    typedef int name_t;
+//    static int counter;
+//    id_t a;
+//    rate_t arr, serv;
+//    name_t name_;
+//    Node() {}
+//    Node(rate_t arrival_rate, rate_t service_rate, name_t const& name = name_t()) : a(counter++), arr(arrival_rate), serv(service_rate), name_(name) {}
+//    Node(Node const& other) : a(other.a), arr(other.arr), serv(other.serv) {}
+//    id_t get_number() {return a;}
+//};
 
-template <typename weight_t>
-struct infinity_wrapper {
-    weight_t operator()() {
-        return std::numeric_limits<weight_t>::infinity();
-    }
-};
+typedef Node<float, size_t, size_t> node_t;
+typedef Edge<size_t, float> edge_t;
+template<>
+size_t node_t::counter_ = 0;
 
-struct Edge {
-    typedef float weight_t;
-    typedef struct infinity_wrapper<weight_t> infinity_wrapper;
-    int a;
-    weight_t b;
-    Edge() : a(0), b(a) {}
-    Edge(int a) : a(a), b(a) {}
-    weight_t const& get_weight() const {return b;}
-    void switch_weight() {b = std::numeric_limits<float>::infinity();}
-};
+//template <typename weight_t>
+//struct infinity_wrapper {
+//    weight_t operator()() {
+//        return std::numeric_limits<weight_t>::infinity();
+//    }
+//};
+
+//struct edge_t {
+//    typedef float weight_t;
+//    typedef struct infinity_wrapper<weight_t> infinity_wrapper;
+//    int a;
+//    weight_t b;
+//    edge_t() : a(0), b(a) {}
+//    edge_t(int a) : a(a), b(a) {}
+//    weight_t const& get_weight() const {return b;}
+//    void switch_weight() {b = std::numeric_limits<float>::infinity();}
+//};
 
 int test_topology() {
-    typedef Topology<Node, Edge>::node_key_t node_key;
-    typedef Topology<Node, Edge>::edge_key_t edge_key;
-    Node n1(.5, .6), n2(.7, .8), &n3(n2);
-    Edge e1(5);
-    Topology<Node, Edge> topo;
+    typedef Topology<node_t, edge_t>::node_key_t node_key;
+    typedef Topology<node_t, edge_t>::edge_key_t edge_key;
+    node_t n1(.5, .6, 0), n2(.7, .8, 1), &n3(n2);
+    edge_t e1(5, 2);
+    Topology<node_t, edge_t> topo;
     node_key kn1 = topo.add_node(n1);
     node_key kn2 = topo.add_node(n2);
     node_key kn3 = topo.add_node(std::move(n3));
     edge_key ke1 = topo.add_edge(kn1, kn2, e1);
-    edge_key ke2 = topo.add_edge(kn1, kn3, Edge(10));
-    typename Topology<Node, Edge>::edge_map_t map = topo.get_edge_map();
-    FTEST(map[ke1].a == 5);
-    FTEST(map[ke2].a == 10);
+    edge_key ke2 = topo.add_edge(kn1, kn3, edge_t(10, 100));
+    typename Topology<node_t, edge_t>::edge_map_t map = topo.get_edge_map();
+    FTEST(map[ke1].get_weight() == 2);
+    FTEST(map[ke2].get_weight() == 100);
 
     // Test import_topology_from_int
-    Topology<Node, Edge> topo2;
-    std::vector<std::tuple<int, int, Edge>> description = {std::make_tuple(0, 1, Edge(3)),
-                                                           std::make_tuple(0, 2, Edge(9)),
-                                                           std::make_tuple(1, 2, Edge(2)),
-                                                           std::make_tuple(1, 3, Edge(10)),
-                                                           std::make_tuple(2, 3, Edge(1))};
+    Topology<node_t, edge_t> topo2;
+    std::vector<std::tuple<int, int, edge_t>> description = {std::make_tuple(0, 1, edge_t(1, 3)),
+                                                           std::make_tuple(0, 2, edge_t(1, 9)),
+                                                           std::make_tuple(1, 2, edge_t(1, 2)),
+                                                           std::make_tuple(1, 3, edge_t(1, 10)),
+                                                           std::make_tuple(2, 3, edge_t(1, 1))};
     topo2.import_topology_from_description(description.cbegin(), description.cend(), .5, .6);
     auto edge_map2 = topo2.get_edge_map();
 //    auto node_map2 = topo2.get_node_map();
 
-    typedef Topology<Node, Edge>::edge_iterator edge_iter;
+    typedef Topology<node_t, edge_t>::edge_iterator edge_iter;
 //    edge_iter ei, ei_end;
 //    for (std::tie(ei, ei_end) = topo2.edges(); ei != ei_end; ++ei)
-//        std::cout << "Edge " << edge_map2[*ei].b << std::endl;
+//        std::cout << "edge_t " << edge_map2[*ei].b << std::endl;
 //
-    typedef Topology<Node, Edge>::node_iterator node_iter;
+    typedef Topology<node_t, edge_t>::node_iterator node_iter;
     std::pair<node_iter, node_iter> vp;
 //    for (vp = topo2.nodes(); vp.first != vp.second; ++vp.first)
-//        std::cout << "Node " << node_map2[*vp.first].a << std::endl;
+//        std::cout << "node_t " << node_map2[*vp.first].a << std::endl;
 //    std::cout << std::endl;
 
     vp = topo2.nodes();
@@ -321,7 +327,7 @@ int test_topology() {
         sstr << it;
     FTEST(std::string("(2,3)(1,2)(0,1)").compare(sstr.str()) == 0);
 
-    edge_map2[*topo2.edges().first].switch_weight();
+    edge_map2[*topo2.edges().first].allocate_flow(0);
 
     vp = topo2.nodes();
     path = topo2.shortest_path(*vp.first, *(vp.first+3));
@@ -340,7 +346,7 @@ int test_topology() {
            std::string("(5,8)(5,3)(6,9)(6,7)(7,10)(7,8)(8,11)(8,6)(9,0)")+
            std::string("(9,10)(10,1)(10,11)(11,2)(11,9)")).compare(sstr3.str()) == 0);
 
-    Topology<Node, Edge> topo3(torus.begin(), torus.end(), .5, .6);
+    Topology<node_t, edge_t> topo3(torus.begin(), torus.end(), .5, .6);
     std::ofstream file("test.graphviz", std::ios_base::out);
     topo3.dump_graphviz(file);
     file.close();
