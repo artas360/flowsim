@@ -38,3 +38,7 @@ class Flow_controller(object):
 
     def get_topology(self):
         return self.topology
+
+    def reconfigure_topology(self, results, algorithm=""):
+        # TODO: switch on algorithm
+        pass

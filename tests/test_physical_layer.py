@@ -15,6 +15,8 @@ from flowsim.flowsim_exception import NoSuchEdge
 from flowsim.flowsim_exception import NoSuchNode
 from flowsim.flowsim_exception import DuplicatedNodeError
 from flowsim.flowsim_exception import EdgeAllocationError
+from flowsim.flowsim_exception import EdgePlugInError
+from flowsim.flowsim_exception import EdgePlugOutError
 
 
 class Flow(object):
@@ -75,6 +77,28 @@ class Test_edge(TestCase):
         self.assertNotIn(flow, edge.passing_flows)
 
         self.assertRaises(EdgeAllocationError, edge.free_flow, Flow())
+
+    def test_edge_plugin(self):
+        node = Node(.1, .2, 0, tx_slot=2, rx_slot=2)
+
+        node.plug_in_edge(True)
+        node.plug_in_edge(True)
+        self.assertRaises(EdgePlugInError, node.plug_in_edge, True)
+
+        node.plug_in_edge(False)
+        node.plug_in_edge(False)
+        self.assertRaises(EdgePlugInError, node.plug_in_edge, False)
+
+    def test_edge_plugout(self):
+        node = Node(.1, .2, 0, tx_slot=2, rx_slot=2)
+
+        node.plug_in_edge(True)
+        node.plug_out_edge(True)
+        self.assertRaises(EdgePlugOutError, node.plug_out_edge, False)
+
+        node.plug_in_edge(False)
+        node.plug_out_edge(False)
+        self.assertRaises(EdgePlugOutError, node.plug_out_edge, False)
 
 
 class Test_Meta_edge(TestCase):

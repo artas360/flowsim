@@ -161,6 +161,12 @@ class User_event_analyzer(object):
                                          "User",
                                          handling_time=handling_time,
                                          time_interval=effect_value)
+        elif event_description["type"] == "reconfigure_topology_event":
+            self.event_manager.add_event(Reconfigure_topology_event,
+                                         "User",
+                                         handling_time=handling_time,
+                                         time_interval=effect_value,
+                                         algorithm=effect_value)
         elif event_description["type"] == "watcher_event":
             self.event_manager.add_event(Watcher_event,
                                          "User",
@@ -182,6 +188,25 @@ class Sample_event(Event):  # Should not be User_event or infinite loop
                                      handling_time=(self.handling_time +
                                                     self.time_interval),
                                      time_interval=self.time_interval)
+
+
+# Should not be User_event or infinite loop
+class Reconfigure_topology_event(Event):
+    def __init__(self, event_manager, event_issuer, **kwargs):
+        super(self.__class__, self).__init__(event_manager, event_issuer)
+        self.handling_time = kwargs.pop("handling_time")
+        self.time_interval = kwargs.pop("time_interval")
+        self.algorithm = kwargs.pop("algorithm")
+
+    def handle_event(self):
+        self.event_manager.get_flow_controller().\
+            reconfigure_topology(self.result, self.algorithm)
+        self.event_manager.add_event(self.__class__,
+                                     self.event_issuer,
+                                     handling_time=(self.handling_time +
+                                                    self.time_interval),
+                                     time_interval=self.time_interval,
+                                     algorithm=self.algorithm)
 
 
 class User_event(Event):

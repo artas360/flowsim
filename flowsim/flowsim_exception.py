@@ -36,3 +36,11 @@ class EdgeAllocationError(Exception):
 
 class WrongConfig(Exception):
     pass
+
+
+class EdgePlugInError(Exception):
+    pass
+
+
+class EdgePlugOutError(Exception):
+    pass

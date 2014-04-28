@@ -48,6 +48,15 @@ class Meta_edge(object):  # Interface for mutiple edges between 2 nodes
         self.edge_list.append(edge)
         self.weight = min(self.weight, edge.weight)
 
+    def remove_least_busy_edge(self, force):
+        # Try to find the least busy Edge
+        selected_edge = min(self.edge_list, key=lambda x: x.passing_flows)
+        if not force and selected_edge.passing_flows > 0:
+            return None
+        else:
+            self.remove_edge(selected_edge)
+            return edge
+
     def remove_edge(self, edge):
         try:
             self.edge_list.remove(edge)

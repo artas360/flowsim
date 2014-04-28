@@ -55,13 +55,18 @@ class Config:
                 dic = dict()
                 try:
                     dic['name'] = \
-                        str(self.get_optional_attribute(node,
-                                                        'name',
+                        str(self.get_optional_attribute(node, 'name',
                                                         default_attributes))
                     dic['service_rate'] = \
                         float(node.getAttribute('service_rate'))
                     dic['arrival_rate'] = \
                         float(node.getAttribute('arrival_rate'))
+                    dic['tx_slot'] = \
+                        int(self.get_optional_attribute(node, 'tx_slot',
+                                                        default_attributes))
+                    dic['rx_slot'] = \
+                        int(self.get_optional_attribute(node, 'rx_slot',
+                                                        default_attributes))
 
                     dic['_id'] = int(node.getAttribute('id'))
                     if not dic['_id'] in id_list:

@@ -65,6 +65,10 @@ class Topology(networkx.DiGraph):
             self[node1][node2]['object'].free_flow(flow)
             self[node1][node2]['weight'] = self[node1][node2]['object'].weight
 
+    # Will remove ONE of the edges in Meta_edge
+    def remove_edge(self, node1, node2, force=False):
+        return self[node1][node2].remove_least_busy_edge(force)
+
     def get_edge_object(self, node1, node2):
         return self[node1][node2]['object']
 

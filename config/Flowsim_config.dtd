@@ -31,6 +31,8 @@
 <!ATTLIST Node
 	id ID #REQUIRED
 	name CDATA #IMPLIED
+	tx_slot CDATA "1"
+	rx_slot CDATA "1"
 	arrival_rate CDATA #REQUIRED
 	service_rate CDATA #REQUIRED
 >
