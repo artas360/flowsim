@@ -6,10 +6,7 @@ from flowsim.flowsim_exception import NoPathError,\
 
 class Flow_controller(object):
     def __init__(self, topology, event_manager, simulation):
-        self.event_manager = event_manager
-        self.simulation = simulation
         self.topology = topology
-
         self.flows = []
 
     def allocate_flow(self, node1, node2):

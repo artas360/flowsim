@@ -1,5 +1,5 @@
 import networkx
-from flowsim.physical_layer.edge import Edge
+from flowsim.physical_layer.edge import Edge, Meta_edge
 from flowsim.physical_layer.node import Node, Entry_node, Exit_node
 from flowsim.flowsim_exception import NoSuchEdge,\
     DuplicatedNodeError,\
@@ -23,8 +23,31 @@ class Topology(networkx.DiGraph):
         self.add_nodes_from(nbunch)
 
     def add_edge(self, node1, node2, edge_object, edge_weight=1):
-        self.add_edges([(node1, node2, {'object': edge_object})],
-                       edge_weight=edge_weight)
+        try:
+            edge = self[node1][node2]['object']
+        except KeyError:
+            if isinstance(edge_object, Edge):
+                edge_object = Meta_edge(edge_object)
+            elif isinstance(edge_object, Meta_edge):
+                pass
+            else:
+                raise ValueError
+            super(self.__class__, self).add_edge(node1, node2,
+                                                 {'object': edge_object,
+                                                  'weight': edge_weight})
+        else:
+            if isinstance(edge, Meta_edge):
+                edge.add_edge(edge_object)
+            elif isinstance(edge, Edge):
+                edge_object = Meta_edge(edge_object)
+                edge_object.add_edge(self[node1][node2])
+                self.remove_edge(node1, node2)
+                super(self.__class__, self).add_edge(node1, node2,
+                                                     {'object': edge_object,
+                                                      'weight': edge_weight})
+            else:
+                print type(edge)
+                raise TypeError
 
     def add_edges(self, edge_list, edge_weight=1):
         # Each edge (node1, node2, {'object': object})

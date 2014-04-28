@@ -169,12 +169,12 @@ class Test_topology(TestCase):
         edge = Edge()
 
         top.add_edge(node1, node2, edge)
-        assert top[node1][node2]['object'] == edge
+        assert top[node1][node2]['object'].edge_list[0] == edge
 
         edge = Edge()
         top.add_edge(node1, node2, edge, 10)
-        assert top[node1][node2]['object'] == edge
-        assert top[node1][node2]['weight'] == 10
+        assert top[node1][node2]['object'].edge_list[1] == edge
+        assert top[node1][node2]['weight'] == 1
 
     def test_add_edges(self):
         topo = Topology()
@@ -320,7 +320,7 @@ class Test_topology(TestCase):
                                      self.arrival_rate,
                                      self.service_rate)
         nodes = topo.nodes()
-        assert topo[nodes[0]][nodes[1]]['object'].max_flows == 2
+        assert topo[nodes[0]][nodes[1]]['object'].edge_list[0].max_flows == 2
 
         topo = Topology()
         # Edge (node, node, capacity)
@@ -329,7 +329,7 @@ class Test_topology(TestCase):
                                      self.arrival_rate,
                                      self.service_rate)
         nodes = topo.nodes()
-        assert topo[nodes[0]][nodes[1]]['object'].max_flows == 2
+        assert topo[nodes[0]][nodes[1]]['object'].edge_list[0].max_flows == 2
         assert topo[nodes[0]][nodes[1]]['weight'] == 3
 
         topo = Topology()

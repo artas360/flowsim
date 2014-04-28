@@ -3,6 +3,7 @@ from flowsim.flowsim_exception import EdgeAllocationError
 
 class Edge(object):
     infinite_weight = float("inf")
+
     def __init__(self, capacity=1, name='', weight=1.):
         self.max_flows = capacity
         self.available_flows = self.max_flows
@@ -31,7 +32,7 @@ class Edge(object):
         self.available_flows += 1
         # No need to check since backup always != inf
         self.weight = self.weight_backup
-            
+
     def get_name(self):
         return self.name
 
@@ -76,3 +77,4 @@ class Meta_edge(object):  # Interface for mutiple edges between 2 nodes
         except KeyError:
             raise EdgeAllocationError
         edge.free_flow(flow)
+        self.weight = min(self.edge_list, key=lambda x: x.weight).weight
