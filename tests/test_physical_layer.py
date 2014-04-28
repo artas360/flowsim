@@ -10,6 +10,7 @@ from flowsim.physical_layer.topology import torus2D
 from flowsim.physical_layer.topology import torus3D
 from flowsim.physical_layer.node import Node
 from flowsim.physical_layer.edge import Edge
+from flowsim.physical_layer.edge import Meta_edge
 from flowsim.flowsim_exception import NoSuchEdge
 from flowsim.flowsim_exception import NoSuchNode
 from flowsim.flowsim_exception import DuplicatedNodeError
@@ -48,23 +49,18 @@ class Test_node(TestCase):
 
 class Test_edge(TestCase):
 
-    def test_get_const_value(self):
-        edge = Edge()
-        assert edge.get_const_value('LAST_FLOW_AVAILABLE') == -1
-
     def test_allocate_flow(self):
         edge = Edge(1)
 
         flow = Flow()
-        assert edge.allocate_flow(flow) ==\
-            edge.get_const_value('LAST_FLOW_AVAILABLE')
+        edge.allocate_flow(flow),
 
-        assert flow in edge.passing_flows
+        self.assertIn(flow, edge.passing_flows)
 
         flow = Flow()
         self.assertRaises(EdgeAllocationError, edge.allocate_flow, flow)
 
-        assert not flow in edge.passing_flows
+        self.assertNotIn(flow, edge.passing_flows)
 
     def test_free_flow(self):
         edge = Edge(1)
@@ -76,9 +72,73 @@ class Test_edge(TestCase):
 
         edge.free_flow(flow)
 
-        assert not flow in edge.passing_flows
+        self.assertNotIn(flow, edge.passing_flows)
 
         self.assertRaises(EdgeAllocationError, edge.free_flow, Flow())
+
+
+class Test_Meta_edge(TestCase):
+    def setUp(self):
+        self.edge1 = Edge(1, '', 2.)
+        self.edge2 = Edge(1, '', 1.)
+        self.meta_edge = Meta_edge(self.edge1)
+
+    def test_init(self):
+        self.assertIn(self.edge1, self.meta_edge.edge_list)
+        self.assertEqual(self.edge1.weight, self.meta_edge.weight)
+
+    def test_add_edge(self):
+        self.meta_edge.add_edge(self.edge2)
+        self.assertIn(self.edge2, self.meta_edge.edge_list)
+        self.assertRaises(AssertionError, self.meta_edge.add_edge, self.edge1)
+
+        self.assertEqual(self.edge2.weight, self.meta_edge.weight)
+
+    def test_remove_edge(self):
+        self.assertRaises(EdgeAllocationError,
+                          self.meta_edge.remove_edge,
+                          self.edge2)
+        self.meta_edge.remove_edge(self.edge1)
+        self.assertNotIn(self.edge1, self.meta_edge.edge_list)
+        self.assertEqual(self.meta_edge.weight, Edge.infinite_weight)
+
+        self.meta_edge.add_edge(self.edge1)
+        self.meta_edge.add_edge(self.edge2)
+
+        self.assertEqual(self.meta_edge.remove_edge(self.edge1), 1)
+        self.assertNotIn(self.edge1, self.meta_edge.edge_list)
+
+        self.assertEqual(self.meta_edge.weight, self.edge2.weight)
+        self.assertEqual(self.meta_edge.remove_edge(self.edge2), 0)
+
+    def test_allocate_flow(self):
+        flow1 = Flow()
+        flow2 = Flow()
+        self.meta_edge.add_edge(self.edge2)
+
+        self.meta_edge.allocate_flow(flow1)
+        self.assertIn(flow1, self.edge2.passing_flows)
+        self.assertEqual(self.edge2, self.meta_edge.flow_to_edge[flow1])
+        self.assertEqual(self.edge1.weight, self.meta_edge.weight)
+
+        self.meta_edge.allocate_flow(flow2)
+        self.assertIn(flow2, self.edge1.passing_flows)
+        self.assertEqual(self.edge1, self.meta_edge.flow_to_edge[flow2])
+        self.assertEqual(self.edge1.weight, self.meta_edge.weight)
+
+    def test_free_flow(self):
+        flow1 = Flow()
+        flow2 = Flow()
+        self.meta_edge.add_edge(self.edge2)
+        self.meta_edge.allocate_flow(flow1)
+
+        self.meta_edge.free_flow(flow1)
+        self.assertNotIn(flow1, self.edge1.passing_flows)
+        self.assertNotIn(flow1, self.edge2.passing_flows)
+
+        self.assertNotIn(flow1, self.meta_edge.flow_to_edge)
+
+        self.assertRaises(EdgeAllocationError, self.meta_edge.free_flow, flow2)
 
 
 class Test_topology(TestCase):
@@ -161,36 +221,12 @@ class Test_topology(TestCase):
         # Adding link 3 -> 4
         topo.add_edge(nodes[3], nodes[4], Edge(), edge_weight=1)
         # Link 2 -> 4 not available
-        topo.set_edge_unavailable(nodes[2], nodes[4])
+        topo.allocate_flow(nodes[2], nodes[4], Flow())
         assert(shortest_path(topo,
                              nodes[0],
                              nodes[5],
                              weight='weight') ==
                [nodes[0], nodes[3], nodes[4], nodes[5]])
-
-    def test_set_edge_unavailable(self):
-        topo = Topology()
-        nodes = [Node(self.arrival_rate, self.service_rate, i)
-                 for i in xrange(6)]
-        topo.add_nodes(nodes)
-        topo.add_edges([(nodes[0], nodes[3], {'object': Edge()}),
-                        (nodes[0], nodes[1], {'object': Edge()}),
-                        (nodes[0], nodes[2], {'object': Edge()}),
-                        (nodes[1], nodes[2], {'object': Edge()}),
-                        (nodes[3], nodes[2], {'object': Edge()}),
-                        (nodes[4], nodes[2], {'object': Edge()}),
-                        (nodes[4], nodes[5], {'object': Edge()})],
-                       edge_weight=1)
-        edge = topo[nodes[1]][nodes[2]]
-
-        topo.set_edge_unavailable(nodes[1], nodes[2])
-
-        assert topo[nodes[1]][nodes[2]]['weight'] == topo.infinity
-
-        self.assertRaises(NoSuchEdge,
-                          topo.set_edge_unavailable,
-                          nodes[0],
-                          nodes[5])
 
     def test_swap_node_arr_rate(self):
         topo = Topology()
@@ -334,8 +370,6 @@ class Test_topology(TestCase):
 
         flow = Flow()
         edge.allocate_flow(flow)
-
-        topo.set_edge_unavailable(nodes[1], nodes[2])
 
         topo.free_edge(nodes[1], nodes[2], flow)
 

@@ -30,23 +30,17 @@ class Topology(networkx.DiGraph):
         # Each edge (node1, node2, {'object': object})
         self.add_edges_from(edge_list, weight=edge_weight)
 
-    def set_edge_unavailable(self, node1, node2):
+    def allocate_flow(self, node1, node2, flow):
         try:
-            self[node1][node2]['edge_former_weight'] =\
-                self[node1][node2]['weight']
-            self[node1][node2]['weight'] = self.infinity
-        except KeyError:
-            raise NoSuchEdge()
+            self[node1][node2]['object'].allocate_flow(flow)
+            self[node1][node2]['weight'] = self[node1][node2]['object'].weight
+        except:
+            raise
 
     def free_edge(self, node1, node2, flow):
-        try:
-            if self[node1][node2]['weight'] == self.infinity:
-                self[node1][node2]['weight'] =\
-                    self[node1][node2]['edge_former_weight']
-            if flow is not None:
-                self[node1][node2]['object'].free_flow(flow)
-        except KeyError:
-            raise NoSuchEdge
+        if flow is not None:
+            self[node1][node2]['object'].free_flow(flow)
+            self[node1][node2]['weight'] = self[node1][node2]['object'].weight
 
     def get_edge_object(self, node1, node2):
         return self[node1][node2]['object']
@@ -152,7 +146,7 @@ class Topology(networkx.DiGraph):
                 nodes = edge.pop('nodes')
             except KeyError:
                 print edge
-            weight = edge.pop('weight', 1)
+            weight = edge.get('weight', 1)
             unidir = edge.pop('unidir', False)
             new_edge = Edge(**edge)
             self.add_edge(temp_dict[nodes[0]],

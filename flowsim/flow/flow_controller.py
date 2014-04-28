@@ -19,27 +19,13 @@ class Flow_controller(object):
             nodes = self.topology.shortest_path(node1, node2)
         except NoPathError:
             raise NoPathError()
-        edges = [self.topology.get_edge_object(nodes[i], nodes[i+1])
-                 for i in xrange(len(nodes)-1)]
         flow = Flow(nodes)
 
-        try:
-            for edge in edges:
-                ret = edge.allocate_flow(flow)
-                if ret == edge.get_const_value('LAST_FLOW_AVAILABLE'):
-                    # TODO useless we already know i
-                    i = edges.index(edge)
-                    self.topology.set_edge_unavailable(nodes[i], nodes[i+1])
+        for i in xrange(len(nodes)-1):
+            self.topology.allocate_flow(nodes[i], nodes[i+1], flow)
 
-        # If we except the node should be unavailable and
-        # we need to free the first allocations of the flow
-        except RessourceAllocationError:
-            self.topology.set_edge_unavailable(node[i], node[i+1])
-            for edge in edges[:i-1]:
-                edge.free_flow(flow)
-        else:
-            self.flows.append(flow)
-            return flow
+        self.flows.append(flow)
+        return flow
 
     def free_flow(self, flow):
         try:
