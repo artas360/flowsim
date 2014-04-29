@@ -106,17 +106,13 @@ class Result {
         }
 
         bool check_convergence(std::string const& value_key) {
-            try {
-                return convergence_map_.at(value_key).has_converged();
-            } catch(std::out_of_range e) {
-                throw Not_registered_value();
-            }
+            return check_convergence(value_key, this->get(general_key_, value_key));
         }
 
         bool check_convergence(std::string const& value_key, result_value_t const& new_sample) {
             try {
                 convergence_map_.at(value_key).update_samples(new_sample);
-                check_convergence(value_key);
+                return convergence_map_.at(value_key).has_converged();
             } catch(std::out_of_range e) {
                 throw Not_registered_value();
             }

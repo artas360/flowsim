@@ -58,10 +58,15 @@ class Flow_controller {
                 pair = flows_.emplace(flow_key, shortest_path);
                 assert(pair.second);
             }
+            else {
+                throw(No_path_error());
+            }
 
+            auto a = ((*(pair.first)).second.get_edges());
+            assert(not a.empty());
             // Trying to reserve Edge ressources along the path
             typename flow_t::const_iterator it((*(pair.first)).second.get_edges().cbegin()),
-                                                         end((*(pair.first)).second.get_edges().cend());
+                                            end((*(pair.first)).second.get_edges().cend());
 
             try {
                 for(; it != end; ++it) {

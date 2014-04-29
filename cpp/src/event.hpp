@@ -53,13 +53,16 @@ class Event_manager {
         }
 
         void handle_next_event(){
+
             if (event_list_.empty()) {
                 EOS_ = true;
                 return;
             }
 
             event_t *event = event_list_.top();
+            event_list_.pop();
             time_elapsed_ = event->get_handling_time();
+
 
             result_.record_value(std::string("time_elapsed"),
                                  result_.get_general_key(),
@@ -69,24 +72,23 @@ class Event_manager {
             event->automated_update_result();
             event->post_handle();
 
-            event_list_.pop();
             allocator_.destroy(event);
+
         }
 
         template <typename event_type_t, typename... Args>
          void add_event(typename event_type_t::event_issuer_t const& event_issuer, Args... param) {
-             std::cerr << "Adding Event with issuer " << event_issuer.first << std::endl;
              event_list_.emplace(allocator_.construct<event_type_t>(*this, event_issuer, param...));
         }
 
         void init_run() {
-            typedef std::pair<node_key_t const&, node_t const&> node_key_obj;
+            typedef std::pair<const node_key_t, std::reference_wrapper<const node_t>> node_key_obj;
 
             auto bounds = flow_controller_.get_entry_nodes();
             for(auto node_key = std::get<0>(bounds);
                 node_key != std::get<1>(bounds);
                 ++node_key) {
-                const node_key_obj tmp = std::make_pair(*node_key, flow_controller_.get_topology().get_node_object(*node_key));
+                const node_key_obj tmp = std::make_pair(*node_key, std::cref(flow_controller_.get_topology().get_node_object(*node_key)));
                 add_event<Arrival_event<Event_manager<flow_controller_t, event_time_t, result_t>, node_key_obj>>(tmp);
             }
 
@@ -112,10 +114,6 @@ class Event_manager {
             size_t counter = 0;
             const std::string block_rate("Blocking_rate");
             init_run();
-
-            while(not EOS_ and not has_converged){
-                handle_next_event();
-            }
 
             while (not EOS_ and not has_converged) {
                 handle_next_event();

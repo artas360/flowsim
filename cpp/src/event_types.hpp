@@ -49,6 +49,10 @@ class Event {
         virtual void post_handle() {
         }
 
+        virtual std::string __class__() const {
+            return std::string("Event");
+        }
+
     protected:
 
         virtual void set_handling_time(event_time_t const& handling_time) {
@@ -78,8 +82,6 @@ class Specialized_event : public Event<Event_manager>{
         typedef typename Event<Event_manager>::event_time_t event_time_t;
 
         Specialized_event(Event_manager &event_manager, Event_issuer const& event_issuer, event_time_t end_event_time, event_time_t handling_time) : Event<Event_manager>(event_manager, end_event_time, handling_time), event_issuer_(event_issuer) {
-            std::cerr << "Spec_eve passed" << std::get<0>(event_issuer) << std::endl;
-            std::cerr << "Spec_eve Local" << std::get<0>(event_issuer_) << std::endl;
         }
         virtual ~Specialized_event() {}
 
@@ -90,8 +92,8 @@ class Specialized_event : public Event<Event_manager>{
                                                                   std::get<0>(event_issuer_));
         }
 
-        std::string __class__() const {
-            return std::string("End_flow_event");
+        virtual std::string __class__() const {
+            return std::string("Specialized_event");
         }
 
     // TODO  protected
@@ -115,7 +117,8 @@ class End_flow_event : public Specialized_event<Event_manager, Event_issuer> {
 
     public:
         typedef typename Event<Event_manager>::event_time_t event_time_t;
-        End_flow_event(Event_manager &event_manager, Event_issuer const& event_issuer, event_time_t handling_time, flow_t &flow) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, handling_time), flow_(flow) {}
+        End_flow_event(Event_manager &event_manager, Event_issuer const& event_issuer, event_time_t handling_time, flow_t &flow) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, handling_time), flow_(flow) {
+        }
 
         void handle_event() {
             this->get_event_manager().get_flow_controller().free_flow(flow_);
@@ -136,7 +139,8 @@ class End_of_simulation_event : public Specialized_event<Event_manager, Event_is
     public:
         typedef typename Event<Event_manager>::event_time_t event_time_t;
 
-        End_of_simulation_event(Event_manager &event_manager, Event_issuer const& event_issuer, event_time_t handling_time) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, handling_time) {}
+        End_of_simulation_event(Event_manager &event_manager, Event_issuer const& event_issuer, event_time_t handling_time) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, handling_time) {
+        }
 
         void handle_event() {
             this->get_event_manager().set_EOS();
@@ -181,7 +185,8 @@ INSTANCIATE_CLASS_NAME(Flow_allocation_success_event)
 template <class Event_manager, class Event_issuer>
 class Flow_allocation_failure_event: public Specialized_event<Event_manager, Event_issuer> {
     public:
-        Flow_allocation_failure_event(Event_manager &event_manager, Event_issuer const& event_issuer) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, event_manager.get_immediate_handling()) {}
+        Flow_allocation_failure_event(Event_manager &event_manager, Event_issuer const& event_issuer) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, event_manager.get_immediate_handling()) {
+        }
 
         void handle_event() {
         }
@@ -204,18 +209,13 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
 
     public:
         Arrival_event(Event_manager &event_manager, Event_issuer const& event_issuer) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, 0) {
-            std::cerr << "\nBuilding " << __class__() << " at " << std::hex << this << std::dec << std::endl;
-            std::cerr << "Arr event passed " << std::get<0>(event_issuer) << std::endl;
-            std::cerr << "Arr event local " << std::get<0>(this->get_event_issuer()) << std::endl;
-            arrival_rate_ = std::get<1>(event_issuer).get_arrival_rate();
-            service_rate_ = std::get<1>(event_issuer).get_service_rate();
+            arrival_rate_ = std::get<1>(event_issuer).get().get_arrival_rate();
+            service_rate_ = std::get<1>(event_issuer).get().get_service_rate();
             this->set_handling_time(event_manager.get_random_generator().next_arrival(arrival_rate_) + this->get_event_manager().get_time_elapsed());
             this->set_end_event_time(event_manager.get_random_generator().rand_duration(service_rate_) + this->get_handling_time());
         }
 
         void handle_event() {
-            std::cerr << "Handling event " << __class__() << " at " << std::hex << this << std::dec << std::endl;
-            std::cerr << "Passing to child local " << std::get<0>(this->get_event_issuer()) << std::endl;
             flow_t flow;
             const typename Event_manager::node_key_t node_key = std::get<0>(this->get_event_issuer());
             if(this->get_event_manager().new_arrivals()) {
@@ -234,8 +234,8 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
 
             // /!\ WARNING /!\ Make sure that success is handled before end_flow
             // Else it will .length an non-existing flow!
-            this->get_event_manager().template add_event<Flow_allocation_success_event<Event_manager, Event_issuer>>(this->get_event_issuer(), flow);
             this->get_event_manager().template add_event<End_flow_event<Event_manager, Event_issuer>>(this->get_event_issuer(), this->get_end_event_time(), flow);
+            this->get_event_manager().template add_event<Flow_allocation_success_event<Event_manager, Event_issuer>>(this->get_event_issuer(), flow);
         }
 
         std::string __class__() const {
