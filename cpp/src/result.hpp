@@ -38,10 +38,10 @@ class sample_container {
     private:
         size_t counter_;
         sample_value_t epsilon_;
-        std::valarray<sample_value_t> samples_;
         const sample_value_t infinity_ = std::numeric_limits<sample_value_t>::has_quiet_NaN ?
-                                            std::numeric_limits<sample_value_t>::quiet_NaN() :
-                                            std::numeric_limits<sample_value_t>::max();
+                                         std::numeric_limits<sample_value_t>::quiet_NaN() :
+                                         std::numeric_limits<sample_value_t>::max();
+        std::valarray<sample_value_t> samples_;
 };
 
 
@@ -148,7 +148,8 @@ class Result {
             for(auto it: results_) {
                 std::cout << "Holder " << std::get<0>(it) << std::endl;
                 for(auto it2: std::get<1>(it))
-                    out << "\t" << std::get<0>(it2) << "\t\t\t\t" << get(std::get<0>(it), std::get<0>(it2)) << std::endl;
+                    out << "\t" << std::setw(40) << std::setiosflags(std::ios::left) <<
+                    std::get<0>(it2)  << " "<< get(std::get<0>(it), std::get<0>(it2)) << std::endl;
             }
             return out;
         }

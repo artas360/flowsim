@@ -53,6 +53,7 @@ class Event_manager {
         }
 
         void handle_next_event(){
+            static const std::string time_elapsed("time_elapsed");
 
             if (event_list_.empty()) {
                 EOS_ = true;
@@ -64,7 +65,7 @@ class Event_manager {
             time_elapsed_ = event->get_handling_time();
 
 
-            result_.record_value(std::string("time_elapsed"),
+            result_.record_value(time_elapsed,
                                  result_.get_general_key(),
                                  time_elapsed_);
 
@@ -88,8 +89,8 @@ class Event_manager {
             for(auto node_key = std::get<0>(bounds);
                 node_key != std::get<1>(bounds);
                 ++node_key) {
-                const node_key_obj tmp = std::make_pair(*node_key, std::cref(flow_controller_.get_topology().get_node_object(*node_key)));
-                add_event<Arrival_event<Event_manager<flow_controller_t, event_time_t, result_t>, node_key_obj>>(tmp);
+                add_event<Arrival_event<Event_manager<flow_controller_t, event_time_t, result_t>, node_key_obj>>(
+                    std::make_pair(*node_key, std::cref(flow_controller_.get_topology().get_node_object(*node_key))));
             }
 
             result_.add_computed_value(false,
@@ -112,7 +113,7 @@ class Event_manager {
         void start_event_processing() {
             bool has_converged = false;
             size_t counter = 0;
-            const std::string block_rate("Blocking_rate");
+            static const std::string block_rate("Blocking_rate");
             init_run();
 
             while (not EOS_ and not has_converged) {

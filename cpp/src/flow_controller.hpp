@@ -59,7 +59,7 @@ class Flow_controller {
                 assert(pair.second);
             }
             else {
-                throw(No_path_error());
+                return key_generator_t::not_key();
             }
 
             auto a = ((*(pair.first)).second.get_edges());

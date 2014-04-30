@@ -10,16 +10,8 @@
 #include "result.hpp"
 #include "flow_controller.hpp"
 
-#define INSTANCIATE_CLASS_NAME(X) ;
-//template<>\
-//std::string __class__(#X const&) {\
-//    return std::string("#X");\
-//}
-
-template <class etype>
-std::string __class__(etype const&) {
-    return std::string();
-}
+#define INSTANCIATE_CLASS_NAME(X) template<class Event_manager, class Event_issuer>\
+                                  const std::string X<Event_manager, Event_issuer>::__name__(#X);
 
 template <class Event_manager>
 class Event {
@@ -49,9 +41,7 @@ class Event {
         virtual void post_handle() {
         }
 
-        virtual std::string __class__() const {
-            return std::string("Event");
-        }
+        virtual std::string const& __class__() const = 0;
 
     protected:
 
@@ -92,10 +82,6 @@ class Specialized_event : public Event<Event_manager>{
                                                                   std::get<0>(event_issuer_));
         }
 
-        virtual std::string __class__() const {
-            return std::string("Specialized_event");
-        }
-
     // TODO  protected
 
     public:
@@ -104,9 +90,14 @@ class Specialized_event : public Event<Event_manager>{
             return event_issuer_;
         }
 
+        virtual std::string const& __class__() const {
+            return __name__;
+        }
+
     private:
         // Not ref for storing std::pair
         const event_issuer_t event_issuer_;
+        static const std::string __name__; 
 };
 
 
@@ -124,12 +115,13 @@ class End_flow_event : public Specialized_event<Event_manager, Event_issuer> {
             this->get_event_manager().get_flow_controller().free_flow(flow_);
         }
 
-        std::string __class__() const {
-            return std::string("End_flow_event");
+        std::string const& __class__() const {
+            return __name__;
         }
 
     private:
         flow_t flow_;
+        static const std::string __name__;
 };
 INSTANCIATE_CLASS_NAME(End_flow_event)
 
@@ -146,9 +138,12 @@ class End_of_simulation_event : public Specialized_event<Event_manager, Event_is
             this->get_event_manager().set_EOS();
         }
 
-        std::string __class__() const {
-            return std::string("End_of_simulation_event");
+        std::string const& __class__() const {
+            return __name__;
         }
+
+    private:
+        static const std::string __name__;
 };
 INSTANCIATE_CLASS_NAME(End_of_simulation_event)
 
@@ -172,12 +167,13 @@ class Flow_allocation_success_event: public Specialized_event<Event_manager, Eve
             #endif
         }
 
-        std::string __class__() const {
-            return std::string("Flow_allocation_success_event");
+        std::string const& __class__() const {
+            return __name__;
         }
 
     private:
         flow_t flow_;
+        static const std::string __name__;
 };
 INSTANCIATE_CLASS_NAME(Flow_allocation_success_event)
 
@@ -196,9 +192,12 @@ class Flow_allocation_failure_event: public Specialized_event<Event_manager, Eve
                                                                   std::get<0>(this->get_event_issuer()));
         }
 
-        std::string __class__() const {
-            return std::string("Flow_allocation_failure_event");
+        std::string const& __class__() const {
+            return __name__;
         }
+
+    private:
+        static const std::string __name__;
 };
 INSTANCIATE_CLASS_NAME(Flow_allocation_failure_event)
 
@@ -224,10 +223,9 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
 
             typename Event_manager::node_key_t const& dst_node = this->get_event_manager().get_random_exit_node(node_key);
 
-            try {
-                flow = this->get_event_manager().get_flow_controller().allocate_flow(node_key, dst_node);
-                assert(Event_manager::flow_controller_t::key_generator_t::is_valid_key(flow));
-            } catch (No_path_error e) {
+            
+            flow = this->get_event_manager().get_flow_controller().allocate_flow(node_key, dst_node);
+            if (not Event_manager::flow_controller_t::key_generator_t::is_valid_key(flow)) {
                 this->get_event_manager().template add_event<Flow_allocation_failure_event<Event_manager, Event_issuer>>(this->get_event_issuer());
                 return;
             }
@@ -238,13 +236,14 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
             this->get_event_manager().template add_event<Flow_allocation_success_event<Event_manager, Event_issuer>>(this->get_event_issuer(), flow);
         }
 
-        std::string __class__() const {
-            return std::string("Arrival_event");
+        std::string const& __class__() const {
+            return __name__;
         }
 
     private:
         float arrival_rate_;
         float service_rate_;
+        static const std::string __name__;
 };
 INSTANCIATE_CLASS_NAME(Arrival_event)
 
