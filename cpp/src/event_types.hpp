@@ -34,7 +34,7 @@ class Event {
             return handling_time_;
         }
 
-        virtual int get_end_event_time() const {
+        virtual event_time_t get_end_event_time() const {
             return end_event_time_;
         }
 
@@ -99,6 +99,7 @@ class Specialized_event : public Event<Event_manager>{
         const event_issuer_t event_issuer_;
         static const std::string __name__; 
 };
+INSTANCIATE_CLASS_NAME(Specialized_event)
 
 
 template <class Event_manager, class Event_issuer>
@@ -212,6 +213,7 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
             service_rate_ = std::get<1>(event_issuer).get().get_service_rate();
             this->set_handling_time(event_manager.get_random_generator().next_arrival(arrival_rate_) + this->get_event_manager().get_time_elapsed());
             this->set_end_event_time(event_manager.get_random_generator().rand_duration(service_rate_) + this->get_handling_time());
+            assert(this->get_handling_time() != this->get_end_event_time());
         }
 
         void handle_event() {
@@ -222,18 +224,16 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
             }
 
             typename Event_manager::node_key_t const& dst_node = this->get_event_manager().get_random_exit_node(node_key);
-
             
             flow = this->get_event_manager().get_flow_controller().allocate_flow(node_key, dst_node);
             if (not Event_manager::flow_controller_t::key_generator_t::is_valid_key(flow)) {
                 this->get_event_manager().template add_event<Flow_allocation_failure_event<Event_manager, Event_issuer>>(this->get_event_issuer());
-                return;
+            } else {
+                // /!\ WARNING /!\ Make sure that success is handled before end_flow
+                // Else it will .length an non-existing flow!
+                this->get_event_manager().template add_event<Flow_allocation_success_event<Event_manager, Event_issuer>>(this->get_event_issuer(), flow);
+                this->get_event_manager().template add_event<End_flow_event<Event_manager, Event_issuer>>(this->get_event_issuer(), this->get_end_event_time(), flow);
             }
-
-            // /!\ WARNING /!\ Make sure that success is handled before end_flow
-            // Else it will .length an non-existing flow!
-            this->get_event_manager().template add_event<End_flow_event<Event_manager, Event_issuer>>(this->get_event_issuer(), this->get_end_event_time(), flow);
-            this->get_event_manager().template add_event<Flow_allocation_success_event<Event_manager, Event_issuer>>(this->get_event_issuer(), flow);
         }
 
         std::string const& __class__() const {

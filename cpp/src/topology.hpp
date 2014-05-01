@@ -224,7 +224,7 @@ class Topology {
 
 template<class descriptor=size_t, class container_t=std::vector<std::pair<descriptor, descriptor>>>
 container_t torus2D(size_t y, size_t x, size_t ) {
-    typedef typename container_t::value_type value_t;
+    // typedef typename container_t::value_type value_t;
     if (x <= 2 or y <= 2)
         throw Not_implemented_yet();
     container_t edges;

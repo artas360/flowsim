@@ -17,7 +17,7 @@
 template <typename T1, typename T2>
 struct event_comparison {
     bool operator() (T1 *lhs, T2 *rhs) const {
-        return (lhs->get_handling_time() > rhs->get_handling_time());
+        return (lhs->get_handling_time() >= rhs->get_handling_time());
     }
 };
 
@@ -131,7 +131,7 @@ class Event_manager {
             return time_elapsed_;
         }
 
-        Random_generator<event_time_t> get_random_generator() {
+        Random_generator<event_time_t> & get_random_generator() {
             return rand_generator_;
         }
 
@@ -151,7 +151,7 @@ class Event_manager {
             int loop_prevention = 100;
             node_key_t node_key;
 
-            do{
+            do {
                 node_key = flow_controller_.get_topology().get_random_exit_node(rand_generator_.rand_int());
             } while(node_key == different_from and --loop_prevention);
 

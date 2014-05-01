@@ -30,10 +30,6 @@ class Random_generator {
             return number_generator(lowest, highest)(generator_);
         }
 
-        // In event_manager
-        //node_key const& random_exit_node(node_key const&/* different_from*/) {
-        //}
-
     private:
         generator generator_;
 };
@@ -41,11 +37,17 @@ class Random_generator {
 #if TEST_RANDOM_GENERATOR
 
 int test_random_generator() {
-    Random_generator<float> rand(2);
-    for(int i = 0; i < 10; ++i) {
-        std::cout << rand.next_arrival(.1) << std::endl; 
-        std::cout << rand.next_arrival(.4) << std::endl; 
+    Random_generator<float> rand;
+    float mean = 0;
+    float mean2 = 0;
+    size_t samples = 1000;
+    for(int i = 0; i < samples; ++i) {
+        mean += rand.next_arrival(.1);
+        mean2 += rand.rand_duration(.5);
+        rand.rand_int();
     }
+    FTEST((samples / mean) - .1 < .01);
+    FTEST((samples / mean) - .5 < .01);
     return EXIT_SUCCESS;
 }
 

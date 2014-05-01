@@ -74,10 +74,10 @@ int main(int, char*[]) {
 
     // Run
     std::vector<std::tuple<id_t, id_t, edge_t>> description = {std::make_tuple(0, 1, edge_t(1, 1)),
-                                                               //std::make_tuple(0, 2, edge_t(1, 1)),
-                                                               std::make_tuple(1, 2, edge_t(1, 1)),
-                                                               //std::make_tuple(1, 3, edge_t(1, 1)),
-                                                               std::make_tuple(2, 0, edge_t(1, 1))};
+                                                               std::make_tuple(0, 2, edge_t(1, 1)),
+                                                               std::make_tuple(1, 2, edge_t(1, 1))};
+                                                               //std::make_tuple(2, 3, edge_t(1, 1)),
+                                                               //std::make_tuple(3, 0, edge_t(1, 1))};
 
     simulation_t simulation(description.cbegin(),
                             description.cend(),
