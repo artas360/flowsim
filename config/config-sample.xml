@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Flowsim SYSTEM "Flowsim_config.dtd">
+<Flowsim datetime="2014-04-15 10:09" version="develop">
+	<Simulation>
+		<Convergence number_samples="10" epsilon="1e-3" check_interval="1e3"/>
+	</Simulation>
+	<Events>
+		<Event type="arrival_burst_event" event_target="1" trigger_type="time" trigger_value="3000" effect_value=".9"/>
+        <Event type="sample_event" event_target="None" trigger_type="time" trigger_value="0." effect_value="15"/>
+        <!--watcher_event will keep the simulation running until trigger-->
+		<Event type="watcher_event" event_target="None" trigger_type="time" trigger_value="15000" effect_value="0"/>
+	</Events>
+	<Topology>
+		<Nodes>
+			<Default name=""/>
+			<Node id="0" name="node85" arrival_rate=".3" service_rate=".4"/>
+			<Node id="1" name="node86" arrival_rate=".3" service_rate=".4"/>
+		</Nodes>
+		<Links>
+			<Default weight="1." capacity="1" unidirectional="True"/>
+			<Link source_id="0" destination_id="1" weight="1" capacity="1" unidirectional="True"/>
+			<Link source_id="1" destination_id="0" weight="1" capacity="2" unidirectional="True"/>
+		</Links>
+	</Topology>
+</Flowsim>

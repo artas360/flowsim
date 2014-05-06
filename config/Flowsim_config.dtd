@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!ELEMENT Flowsim (Topology,Events?,Simulation?)>
+<!ATTLIST Flowsim
+	version CDATA #REQUIRED
+	datetime CDATA #IMPLIED
+>
+<!ELEMENT Simulation (Convergence?)>
+<!ELEMENT Convergence (#PCDATA)>
+<!ATTLIST Convergence
+	check_interval CDATA #REQUIRED
+	number_samples CDATA #REQUIRED
+	epsilon CDATA #REQUIRED
+>
+<!ELEMENT Events (Event+)>
+<!ELEMENT Event (#PCDATA)>
+<!ATTLIST Event
+	type CDATA #REQUIRED
+	event_target IDREF #IMPLIED
+	trigger_type CDATA #REQUIRED
+	trigger_value CDATA #REQUIRED
+	effect_value CDATA #IMPLIED
+>
+<!ELEMENT Topology (Nodes, Links)>
+<!ELEMENT Nodes (Default?, Node+)>
+<!ELEMENT Default (#PCDATA)>
+<!ATTLIST Default
+	name CDATA #REQUIRED
+>
+<!ELEMENT Node (#PCDATA)>
+<!ATTLIST Node
+	id ID #REQUIRED
+	name CDATA #IMPLIED
+	arrival_rate CDATA #REQUIRED
+	service_rate CDATA #REQUIRED
+>
+<!ELEMENT Links (Default?, Link+)>
+<!ELEMENT Default (#PCDATA)>
+<!ATTLIST Default
+	weight CDATA #REQUIRED
+	capacity CDATA #REQUIRED 
+	unidirectional (False | True) "True"
+>
+<!ELEMENT Link (#PCDATA)>
+<!ATTLIST Link
+	source_id IDREF #REQUIRED
+	destination_id IDREF #REQUIRED
+	weight CDATA "1"
+	capacity CDATA "1"
+	unidirectional (False | True) "True"
+>
+<!ELEMENT Link (#PCDATA)>
+<!ATTLIST Link
+	source_id IDREF #REQUIRED
+	destination_id IDREF #REQUIRED
+	weight CDATA "1"
+	capacity CDATA "1"
+	unidirectional (False | True) "True"
+>
