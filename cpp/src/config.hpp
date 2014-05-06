@@ -1,3 +1,6 @@
+#ifndef __CONFIG_HPP__
+#define __CONFIG_HPP__
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -152,5 +155,7 @@ int main() {
                         event_list,
                         simulation_list);
 }
+
+#endif
 
 #endif
