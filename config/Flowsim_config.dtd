@@ -42,6 +42,7 @@
 	weight CDATA #REQUIRED
 	capacity CDATA #REQUIRED 
 	unidirectional (False | True) "True"
+	enabled (False | True) "True"
 >
 <!ELEMENT Link (#PCDATA)>
 <!ATTLIST Link

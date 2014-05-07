@@ -105,6 +105,11 @@ class Config:
                                                          'unidirectional',
                                                          default_attributes)
                          == "False")
+                    dic['enabled'] = \
+                        (not self.get_optional_attribute(link,
+                                                         'enabled',
+                                                         default_attributes)
+                         == "False")
                     dic['weight'] = \
                         float(self.get_optional_attribute(link,
                                                           'weight',

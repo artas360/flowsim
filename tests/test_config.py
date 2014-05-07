@@ -71,9 +71,9 @@ class Test_config(TestCase):
                 '<Links>',
                 '<Default weight="1." capacity="1" unidirectional="True"/>',
                 ('<Link source_id="0" destination_id="1" weight="1" '
-                 'capacity="1" unidirectional="True"/>'),
+                 'capacity="1" unidirectional="True" enabled="True"/>'),
                 ('<Link source_id="1" destination_id="0" weight="9" '
-                 'capacity="2" unidirectional="False"/>'),
+                 'capacity="2" unidirectional="False" enabled="False"/>'),
                 '</Links>',
                 '</Topology>',
                 '</Flowsim>']
@@ -93,8 +93,16 @@ class Test_config(TestCase):
                  "tx_slot": 1,
                  "rx_slot": 1}
         self.assertTrue(node1 in nodes and node2 in nodes)
-        link1 = {"nodes": (0, 1), "weight": 1., "capacity": 1, "unidir": True}
-        link2 = {"nodes": (1, 0), "weight": 9., "capacity": 2, "unidir": False}
+        link1 = {"nodes": (0, 1),
+                 "weight": 1.,
+                 "capacity": 1,
+                 "unidir": True,
+                 "enabled": True}
+        link2 = {"nodes": (1, 0),
+                 "weight": 9.,
+                 "capacity": 2,
+                 "unidir": False,
+                 "enabled": False}
         self.assertTrue(link1 in links and link2 in links)
 
     def test_read_events(self):
@@ -193,9 +201,9 @@ class Test_config(TestCase):
                 '<Links>',
                 '<Default weight="1." capacity="1" unidirectional="True"/>',
                 ('<Link source_id="0" destination_id="1" weight="1" '
-                 'capacity="1" unidirectional="True"/>'),
+                 'capacity="1" unidirectional="True" enabled="True"/>'),
                 ('<Link source_id="1" destination_id="0" weight="9" '
-                 'capacity="2" unidirectional="False"/>'),
+                 'capacity="2" unidirectional="False" enabled="False"/>'),
                 '</Links>',
                 '</Topology>',
                 '</Flowsim>']
@@ -204,8 +212,16 @@ class Test_config(TestCase):
         self.config.read()
         # Reading conf
         links = self.config.read_links(self.config.topology_conf[0], [0, 1])
-        link1 = {"nodes": (0, 1), "weight": 1., "capacity": 1, "unidir": True}
-        link2 = {"nodes": (1, 0), "weight": 9., "capacity": 2, "unidir": False}
+        link1 = {"nodes": (0, 1),
+                 "weight": 1.,
+                 "capacity": 1,
+                 "unidir": True,
+                 "enabled": True}
+        link2 = {"nodes": (1, 0),
+                 "weight": 9.,
+                 "capacity": 2,
+                 "unidir": False,
+                 "enabled": False}
         # Not sure about the order :/
         self.assertTrue(link1 == links[0] or link1 == links[1])
         self.assertTrue(link2 == links[0] or link2 == links[1])

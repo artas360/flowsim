@@ -4,13 +4,16 @@ from flowsim.flowsim_exception import EdgeAllocationError
 class Edge(object):
     infinite_weight = float("inf")
 
-    def __init__(self, capacity=1, name='', weight=1.):
+    def __init__(self, capacity=1, name='', weight=1., enabled=True):
         self.max_flows = capacity
         self.available_flows = self.max_flows
         self.passing_flows = []
         self.name = name if name != '' else str(id(self))
         self.weight = weight
         self.weight_backup = self.weight
+        self.enabled = enabled
+        if(not enabled):
+            self.disable()
 
     def allocate_flow(self, flow):
         # Flow_manager should not call in that case
@@ -32,6 +35,17 @@ class Edge(object):
         self.available_flows += 1
         # No need to check since backup always != inf
         self.weight = self.weight_backup
+
+    def enable(self):
+        if not self.enabled:
+            self.weight = self.weight_backup
+
+    def disable(self):
+        if len(self.passing_flows) > 0:
+            raise EdgeAllocationError
+        if self.enabled:
+            self.weight_backup = self.weight
+            self.weight = Edge.infinite_weight
 
     def get_name(self):
         return self.name

@@ -19,8 +19,8 @@
 		</Nodes>
 		<Links>
 			<Default weight="1." capacity="1" unidirectional="True"/>
-			<Link source_id="0" destination_id="1" weight="1" capacity="1" unidirectional="True"/>
-			<Link source_id="1" destination_id="0" weight="1" capacity="2" unidirectional="True"/>
+			<Link source_id="0" destination_id="1" weight="1" capacity="1" unidirectional="True" enabled="True"/>
+			<Link source_id="1" destination_id="0" weight="1" capacity="2" unidirectional="True" enabled="True"/>
 		</Links>
 	</Topology>
 </Flowsim>
