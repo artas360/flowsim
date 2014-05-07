@@ -29,6 +29,7 @@ template<class flow_key_t, class _weight=float, class _infinity_wrapper=infinity
 class Edge : public Abstract_edge<flow_key_t, _weight, flow_container_t> {
     public:
         typedef _weight weight_t;
+        typedef size_t capacity_t;
         typedef _infinity_wrapper infinity_wrapper_t;
     private:
         size_t max_flows_;

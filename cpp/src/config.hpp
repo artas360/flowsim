@@ -108,6 +108,8 @@ void generic_parse(DOMNodeList* node_list, config_list& conf) {
         XMLString::transcode(current_child->getNodeName(), child_name, 99);
         if(child_name[0] == '#')
             continue;
+        if(strncmp(child_name, "Default", 8) == 0)
+            continue;  // TODO: Do domething usefull
         for(XMLSize_t i = 0; i < current_child->getAttributes()->getLength(); ++i) {
             XMLString::transcode(current_child->getAttributes()->item(i)->getNodeName(), param_name, 99);
             XMLString::transcode(current_child->getAttributes()->item(i)->getNodeValue(), value, 99);

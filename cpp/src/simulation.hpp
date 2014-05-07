@@ -1,6 +1,7 @@
 #ifndef __SIMULATION_HPP__
 #define __SIMULATION_HPP__
 
+#include <iostream>
 #include <vector>
 
 #include "include.hpp"
@@ -13,6 +14,8 @@
 
 #include "flow.hpp"
 #include "flow_controller.hpp"
+
+#include "config.hpp"
 
 template<class Topology, class Flow_manager, class Event_manager>
 class Simulation {
@@ -31,6 +34,21 @@ class Simulation {
                                           event_manager_(flow_controller_) {
         }
 
+        Simulation(const char* filename) : topology_(),
+                                           flow_controller_(topology_),
+                                           event_manager_(flow_controller_) {
+            config_list node_list, edge_list, event_list, simulation_list;
+
+            if(parse_config(filename,
+                            node_list,
+                            edge_list,
+                            event_list,
+                            simulation_list) != EXIT_SUCCESS) {
+                throw Configuration_error();
+            }
+            topology_.import_topology_from_map(node_list, edge_list);
+        }
+
         typename Event_manager::result_t const& launch_simulation() {
             event_manager_.start_event_processing();
             return event_manager_.get_result();
@@ -47,7 +65,8 @@ class Simulation {
 template<>
 size_t Node<float, size_t, size_t>::counter_ = 0;
 
-int main(int, char*[]) {
+int main(int argc, char *argv[]) {
+
     // Topology types
     typedef size_t node_id_t;
     typedef size_t name_t; // use of import_description_from_int -> name is an int
@@ -71,22 +90,29 @@ int main(int, char*[]) {
     // Simulation
     typedef Simulation<topology_t, flow_controller_t, event_manager_t> simulation_t;
 
-
     // Run
-    std::vector<std::tuple<node_id_t, node_id_t, edge_t>> description = {std::make_tuple(0, 1, edge_t(1, 1)),
-                                                               std::make_tuple(0, 2, edge_t(1, 1)),
-                                                               std::make_tuple(1, 2, edge_t(1, 1))};
-                                                               //std::make_tuple(2, 3, edge_t(1, 1)),
-                                                               //std::make_tuple(3, 0, edge_t(1, 1))};
+    if (argc < 2) { 
+        std::cerr << "Missing configuration file parameter" << std::endl;
+        return EXIT_FAILURE;
+    }
 
-    simulation_t simulation(description.cbegin(),
-                            description.cend(),
-                            .9,
-                            .9);
+    // std::vector<std::tuple<node_id_t, node_id_t, edge_t>> description = {std::make_tuple(0, 1, edge_t(1, 1)),
+    //                                                            std::make_tuple(0, 2, edge_t(1, 1)),
+    //                                                            std::make_tuple(1, 2, edge_t(1, 1))};
+    //                                                            //std::make_tuple(2, 3, edge_t(1, 1)),
+    //                                                            //std::make_tuple(3, 0, edge_t(1, 1))};
 
-    result_t results = simulation.launch_simulation();
+    try {
+        simulation_t simulation(argv[1]);
+        result_t results = simulation.launch_simulation();
+        std::cout << results << std::endl;
+    } catch(Configuration_error const& ce) {
+        std::cerr << "Error parsing configuration file at: " << argv[1] << std::endl;
+        std::cerr << ce.what() << std::endl;
+        return EXIT_FAILURE;
+    }
 
-    std::cout << results << std::endl;
+
 
     return EXIT_SUCCESS;
 }
