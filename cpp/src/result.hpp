@@ -4,7 +4,7 @@
 #include <cmath>
 #include <functional>
 #include <limits>
-#include <ostream>
+#include <iostream>
 #include <iomanip>
 #include <string>
 #include <unordered_map>
