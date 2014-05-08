@@ -54,6 +54,11 @@ class Node : public Abstract_node<_rate_t, _name_t, _id_t> {
             return *this;
         }
 
+        void swap_arr_rate(rate_t new_rate) {
+            assert(new_rate > 0);
+            arrival_rate_ = new_rate;
+        }
+
         operator id_t() const {
             return number_;
         }

@@ -244,6 +244,10 @@ class Topology {
             return shortest_path;
         }
 
+        void swap_node_arr_rate(node_key_t const& target, rate_t const& new_arrival_rate) {
+            get_node_object(target).swap_arr_rate(new_arrival_rate);
+        }
+
         Edge& get_edge_object(edge_key_t const& edge_key) {
             return boost::get(boost::edge_obj1, g_, edge_key);
         }

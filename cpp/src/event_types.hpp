@@ -247,7 +247,56 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
 };
 INSTANCIATE_CLASS_NAME(Arrival_event)
 
+// TODO
+//// Shouldn't User_event or infinite loop
+//template <class Event_manager, class Event_issuer>
+//class Sample_event : public Specialized_event<Event_manager, Event_issuer> {
+//    public:
+//        Sample_event(Event_manager &event_manager, Event_issuer const& event_issuer) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, 0) {
+//        }
+//}
 
+template <class Event_manager>
+class User_event : public Event<Event_manager> {
+    public:
+        typedef typename Event<Event_manager>::event_time_t event_time_t;
+
+        User_event(Event_manager &event_manager, event_time_t end_event_time, event_time_t handling_time) : Event<Event_manager>(event_manager, end_event_time, handling_time) {
+            this->get_event_manager.new_user_event();
+        }
+
+        ~User_event() {
+            // Is it a good idea in case of mem pool ?
+            this->get_event_manager.handled_user_event();
+        }
+};
+
+
+template <class Event_manager>
+class Watcher_event : public User_event<Event_manager> {
+    public:
+        typedef typename User_event<Event_manager>::event_time_t event_time_t;
+        Watcher_event(Event_manager &event_manager, event_time_t handling_time) : User_event<Event_manager>(event_manager, 0, handling_time) {
+        }
+};
+
+
+template <class Event_manager>
+class Arrival_burst_event : public User_event<Event_manager> {
+    typedef typename Event_manager::rate_t rate_t;
+    typedef typename Event_manager::node_key_t node_key_t;
+    public:
+        typedef typename User_event<Event_manager>::event_time_t event_time_t;
+        Arrival_burst_event(Event_manager &event_manager, event_time_t handling_time, node_key_t target, rate_t new_arrival_rate) : User_event<Event_manager>(event_manager, 0, handling_time), target_(target), new_arrival_rate_(new_arrival_rate) {
+        }
+
+        void handle_event() {
+            this->get_event_manager().get_topology().swap_node_arr_rate(target_, new_arrival_rate_);
+        }
+    private:
+        node_key_t target_;
+        rate_t new_arrival_rate_;
+};
 // TODO: User events
 
 #endif

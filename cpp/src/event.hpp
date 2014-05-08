@@ -30,12 +30,14 @@ class Event_manager {
         typedef typename flow_controller_t::flow_key_t flow_key_t;
         typedef typename flow_controller_t::topology_t::node_key_t node_key_t;
         typedef typename flow_controller_t::topology_t::node_t node_t;
+        typedef typename node_t::rate_t rate_t;
         typedef Event<Event_manager<flow_controller_t, event_time_t, result_t>> event_t;
         typedef std::priority_queue<event_t*, std::vector<event_t*>, event_comparison<event_t, event_t>> event_queue;
 
         Event_manager(flow_controller_t & flow_controller) : allocator_(),
                                                              event_list_(),
                                                              EOS_(false),
+                                                             remaining_user_events_(0),
                                                              result_(),
                                                              flow_controller_(flow_controller),
                                                              time_elapsed_(0),
@@ -116,7 +118,7 @@ class Event_manager {
             static const std::string block_rate("Blocking_rate");
             init_run();
 
-            while (not EOS_ and not has_converged) {
+            while (not EOS_ and not (has_converged and remaining_user_events_ == 0)) {
                 handle_next_event();
 
                 if(++counter >= convergence_check_interval_) {
@@ -169,6 +171,14 @@ class Event_manager {
             return time_elapsed_;
         }
 
+        void new_user_event() {
+            ++remaining_user_events_;
+        }
+
+        void handled_user_event() {
+            --remaining_user_events_;
+        }
+
 #if TEST_EVENT
         event_t* const& top() const {
             return event_list_.top();
@@ -181,6 +191,7 @@ class Event_manager {
         Allocator allocator_;
         event_queue event_list_;
         bool EOS_;
+        size_t remaining_user_events_;
         result_t result_;
         flow_controller_t & flow_controller_;
         event_time_t time_elapsed_;
