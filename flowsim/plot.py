@@ -1,4 +1,4 @@
-from matplotlib.pyplot import figure
+from matplotlib.pyplot import figure, show
 
 
 def simple_time_plot(result, data_key, time_key="elapsed_time"):
@@ -20,3 +20,4 @@ def simple_time_plot(result, data_key, time_key="elapsed_time"):
             label=str(data_key)+'=f('+str(time_key)+')')
     ax.set_xlabel(time_key)
     ax.set_ylabel(data_key)
+    show()
