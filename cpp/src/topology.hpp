@@ -150,7 +150,7 @@ class Topology {
 
         void import_topology_from_map(std::vector<std::unordered_map<std::string, std::string>> const& node_list,
                                       std::vector<std::unordered_map<std::string, std::string>> const& edge_list) {
-            std::unordered_map<id_t, vertex_descriptor> temp_map;
+            std::unordered_map<typename node_t::id_t, vertex_descriptor> temp_map;
 
 
             // Reading Nodes
@@ -164,8 +164,6 @@ class Topology {
                               id_s("id");
             for(auto node_desc: node_list) {
                 try {
-                    for(auto it: node_desc) 
-                        std::cerr << it.first << " " << it.second << std::endl;
                     node_id = boost::lexical_cast<id_t, std::string>(node_desc.at(id_s));
                     arr_rate = boost::lexical_cast<rate_t, std::string>(node_desc.at(arrival_rate_s));
                     serv_rate = boost::lexical_cast<rate_t, std::string>(node_desc.at(service_rate_s));
@@ -192,13 +190,14 @@ class Topology {
                               capacity_s("capacity"),
                               weight_s("weight"),
                               dst_id_s("destination_id"),
-                              unidir_s("unidirectionnal");
+                              unidir_s("unidirectional"),
+                              true_s("True");
 
             for(auto edge_desc: edge_list) {
                 try {
                     src_id = boost::lexical_cast<id_t, std::string>(edge_desc.at(src_id_s));
                     dst_id = boost::lexical_cast<id_t, std::string>(edge_desc.at(dst_id_s));
-                    unidir = boost::lexical_cast<bool, std::string>(edge_desc.at(unidir_s));
+                    unidir = edge_desc.at(unidir_s) != true_s ? false : true;
                     weight = boost::lexical_cast<typename edge_t::weight_t, std::string>(edge_desc.at(weight_s));
                     capacity = boost::lexical_cast<typename edge_t::capacity_t, std::string>(edge_desc.at(capacity_s));
 
@@ -214,7 +213,7 @@ class Topology {
                 } catch (boost::bad_lexical_cast const& bc) {
                     throw Configuration_error(bc.what());
                 } catch (std::out_of_range const&) {
-                    throw Configuration_error("Missing required field in node description. Check DTD.");
+                    throw Configuration_error("Missing required field in edge description. Check DTD.");
                 }
             }
 

@@ -56,8 +56,9 @@ int parse_config(const char* filename,
 
     try {
         walker = doc->createTreeWalker(docRootNode, DOMNodeFilter::SHOW_ELEMENT, nullptr, true);
-    } catch (std::exception const& e) {
-        std::cerr << e.what() << std::endl;
+    } catch (xercesc_3_1::DOMException const& e) {
+        std::cerr << "DOM_EXCEPTION" << std::endl;
+        std::cerr << "Check if DTD path is right in " << filename << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -109,7 +110,7 @@ void generic_parse(DOMNodeList* node_list, config_list& conf) {
         if(child_name[0] == '#')
             continue;
         if(strncmp(child_name, "Default", 8) == 0)
-            continue;  // TODO: Do domething usefull
+            continue;  // TODO: Do something useful
         for(XMLSize_t i = 0; i < current_child->getAttributes()->getLength(); ++i) {
             XMLString::transcode(current_child->getAttributes()->item(i)->getNodeName(), param_name, 99);
             XMLString::transcode(current_child->getAttributes()->item(i)->getNodeValue(), value, 99);

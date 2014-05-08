@@ -63,13 +63,13 @@ class Simulation {
 #ifdef SIMULATION
 
 template<>
-size_t Node<float, size_t, size_t>::counter_ = 0;
+size_t Node<float, std::string, size_t>::counter_ = 0;
 
 int main(int argc, char *argv[]) {
 
     // Topology types
     typedef size_t node_id_t;
-    typedef size_t name_t; // use of import_description_from_int -> name is an int
+    typedef std::string name_t;
     typedef float rate_t;
     typedef Node<rate_t, name_t, node_id_t> node_t;
 
@@ -77,14 +77,16 @@ int main(int argc, char *argv[]) {
     typedef float weigth_t;
     typedef Edge<flow_key_t, weigth_t> edge_t;
     typedef Topology<node_t, edge_t> topology_t;
+    typedef topology_t::node_key_t node_key_t;
+    typedef topology_t::edge_key_t edge_key_t;
 
     // Flow types
-    typedef Flow<typename topology_t::edge_key_t> flow_t;
+    typedef Flow<edge_key_t> flow_t;
     typedef Flow_controller<topology_t, flow_t> flow_controller_t;
 
     // Event types
     typedef float time;
-    typedef Result<name_t, float> result_t;
+    typedef Result<node_key_t, float> result_t;
     typedef Event_manager<flow_controller_t, time, result_t> event_manager_t;
 
     // Simulation
@@ -107,12 +109,10 @@ int main(int argc, char *argv[]) {
         result_t results = simulation.launch_simulation();
         std::cout << results << std::endl;
     } catch(Configuration_error const& ce) {
-        std::cerr << "Error parsing configuration file at: " << argv[1] << std::endl;
+        std::cerr << "Error parsing configuration file: " << argv[1] << std::endl;
         std::cerr << ce.what() << std::endl;
         return EXIT_FAILURE;
     }
-
-
 
     return EXIT_SUCCESS;
 }
