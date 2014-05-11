@@ -74,10 +74,6 @@ class Topology {
         typedef Node node_t;
         typedef Edge edge_t;
 
-    private:
-        Graph g_;
-        const typename Edge::weight_t infinity_ = infinity_wrapper_t()();
-
     public:
         Topology() : g_() {
         }
@@ -150,11 +146,7 @@ class Topology {
 
         void import_topology_from_map(std::vector<std::unordered_map<std::string, std::string>> const& node_list,
                                       std::vector<std::unordered_map<std::string, std::string>> const& edge_list) {
-            std::unordered_map<typename node_t::id_t, vertex_descriptor> temp_map;
-
-
             // Reading Nodes
-
             id_t node_id;
             node_name_t node_name;
             rate_t arr_rate, serv_rate;
@@ -169,9 +161,9 @@ class Topology {
                     serv_rate = boost::lexical_cast<rate_t, std::string>(node_desc.at(service_rate_s));
 
                     node_name = boost::lexical_cast<node_name_t, std::string>(node_desc[name_s]);  // Optional param
-                    if(temp_map.find(node_id) != temp_map.end())
+                    if(id_to_key_.find(node_id) != id_to_key_.end())
                         throw Duplicated_node_error();
-                    temp_map[node_id] = add_node(node_t(arr_rate, serv_rate, node_name));
+                    id_to_key_[node_id] = add_node(node_t(arr_rate, serv_rate, node_name));
                 } catch (boost::bad_lexical_cast const& bc) {
                     throw Configuration_error(bc.what());
                 } catch (std::out_of_range const&) {
@@ -179,9 +171,7 @@ class Topology {
                 }
             }
 
-
             // Reading Edges
-
             id_t src_id, dst_id;
             typename edge_t::weight_t weight;
             typename edge_t::capacity_t capacity;
@@ -201,13 +191,13 @@ class Topology {
                     weight = boost::lexical_cast<typename edge_t::weight_t, std::string>(edge_desc.at(weight_s));
                     capacity = boost::lexical_cast<typename edge_t::capacity_t, std::string>(edge_desc.at(capacity_s));
 
-                    add_edge(temp_map[src_id],
-                             temp_map[dst_id],
+                    add_edge(id_to_key_.at(src_id),
+                             id_to_key_.at(dst_id),
                              edge_t(capacity, weight));
 
                     if (not unidir)
-                        add_edge(temp_map[dst_id],
-                                 temp_map[src_id],
+                        add_edge(id_to_key_.at(dst_id),
+                                 id_to_key_.at(src_id),
                                  edge_t(capacity, weight));
 
                 } catch (boost::bad_lexical_cast const& bc) {
@@ -242,6 +232,11 @@ class Topology {
                 ed_s = p[ed_s];
             }
             return shortest_path;
+        }
+
+        node_key_t id_to_key(typename Node::id_t const& id) const {
+            // can throw
+            return id_to_key_.at(id);
         }
 
         void swap_node_arr_rate(node_key_t const& target, rate_t const& new_arrival_rate) {
@@ -298,6 +293,11 @@ class Topology {
             return get(boost::vertex_obj2, g_);
         }
 #endif
+
+    private:
+        Graph g_;
+        std::unordered_map<typename Node::id_t, vertex_descriptor> id_to_key_;
+        const typename Edge::weight_t infinity_ = infinity_wrapper_t()();
 };
 
 template<class descriptor=size_t, class container_t=std::vector<std::pair<descriptor, descriptor>>>

@@ -4,6 +4,7 @@
 #include <queue>
 #include <vector>
 #include <type_traits>
+#include <boost/lexical_cast.hpp>
 
 #include "include.hpp"
 #include "allocator.hpp"
@@ -11,6 +12,7 @@
 #include "result.hpp"
 #include "flow_controller.hpp"
 #include "event_types.hpp"
+#include "config.hpp"
 
 
 // Reversed order comparison
@@ -20,6 +22,7 @@ struct event_comparison {
         return (lhs->get_handling_time() >= rhs->get_handling_time());
     }
 };
+
 
 template <class Flow_controller, class time=float, class result=Result<float>>
 class Event_manager {
@@ -43,7 +46,7 @@ class Event_manager {
                                                              time_elapsed_(0),
                                                              convergence_check_interval_(1000),
                                                              convergence_number_samples_(10),
-                                                             convergence_epsilon_(1e-3){
+                                                             convergence_epsilon_(1e-3) {
         }
 
         ~Event_manager() {
@@ -51,6 +54,34 @@ class Event_manager {
                 event_t *event = event_list_.top();
                 event_list_.pop();
                 allocator_.destroy(event);
+            }
+        }
+
+        void load_user_events(config_list const& conf) {
+            User_event_analyzer<Event_manager<flow_controller_t, event_time_t, result_t>> analyzer(*this);
+            for(auto event: conf) {
+                analyzer.analyze(event);
+            }
+        }
+
+        void load_simulation_config(config_list const& conf) {
+            typedef typename config_list::value_type::mapped_type description_value_t;
+            typedef typename config_list::value_type::key_type description_key_t;
+
+            description_key_t convergence_s("Convergence"),
+                              convergence_check_interval_s("check_interval"),
+                              convergence_number_samples_s("number_samples"),
+                              convergence_epsilon_s("epsilon");
+
+            try {
+                typename config_list::value_type convergence_description = conf[0];
+                convergence_check_interval_ = boost::lexical_cast<size_t, description_value_t>(convergence_description.at(convergence_check_interval_s));
+                convergence_epsilon_ = boost::lexical_cast<decltype(convergence_epsilon_), description_value_t>(convergence_description.at(convergence_epsilon_s));
+                convergence_number_samples_ = boost::lexical_cast<size_t, description_value_t>(convergence_description.at(convergence_number_samples_s));
+            } catch (std::out_of_range const&) {
+                throw Configuration_error("Missing field in Simulation configuration.");
+            } catch (boost::bad_lexical_cast const&) {
+                throw Configuration_error("Invalid field in Simulation configuration.");
             }
         }
 
@@ -76,12 +107,12 @@ class Event_manager {
             event->post_handle();
 
             allocator_.destroy(event);
-
         }
 
         template <typename event_type_t, typename... Args>
-         void add_event(typename event_type_t::event_issuer_t const& event_issuer, Args... param) {
-             event_list_.emplace(allocator_.construct<event_type_t>(*this, event_issuer, param...));
+        //void add_event(typename event_type_t::event_issuer_t const& event_issuer, Args... param) {
+        void add_event(Args... param) {
+             event_list_.emplace(allocator_.construct<event_type_t>(*this, param...));
         }
 
         void init_run() {

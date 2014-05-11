@@ -47,6 +47,8 @@ class Simulation {
                 throw Configuration_error();
             }
             topology_.import_topology_from_map(node_list, edge_list);
+            event_manager_.load_simulation_config(simulation_list);
+            event_manager_.load_user_events(event_list);
         }
 
         typename Event_manager::result_t const& launch_simulation() {

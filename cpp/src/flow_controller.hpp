@@ -121,6 +121,10 @@ class Flow_controller {
             return topology_;
         }
 
+        topology_t & get_topology() {
+            return topology_;
+        }
+
     private:
         Topology &topology_;
         Flow_container flows_;
