@@ -26,9 +26,8 @@ class Flow {
         const container_t edge_list_;
 };
 
-#endif
 
-#if TEST
+#if TEST_FLOW
 
 #include <iostream>
 
@@ -56,4 +55,5 @@ int main() {
     return test_flow();
 }
 
+#endif
 #endif

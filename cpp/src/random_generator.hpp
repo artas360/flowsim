@@ -4,6 +4,7 @@
 #include <random>
 #include <chrono>
 #include <limits>
+
 #include "include.hpp"
 
 template <typename result_type,
@@ -41,7 +42,7 @@ int test_random_generator() {
     float mean = 0;
     float mean2 = 0;
     size_t samples = 1000;
-    for(int i = 0; i < samples; ++i) {
+    for(size_t i = 0; i < samples; ++i) {
         mean += rand.next_arrival(.1);
         mean2 += rand.rand_duration(.5);
         rand.rand_int();

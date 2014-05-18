@@ -3,16 +3,13 @@
 
 #include <iostream>
 #include <string>
-#include <vector>
-#include <unordered_map>
 
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/dom/DOM.hpp>
 
-using namespace xercesc;
+#include "config_interface.hpp"
 
-typedef std::unordered_map<std::string, std::string> parameter_map;
-typedef std::vector<parameter_map> config_list;
+using namespace xercesc;
 
 void generic_parse(DOMNodeList*, config_list&);
 void parse_nodes(DOMNodeList*, config_list&);

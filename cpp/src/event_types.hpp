@@ -3,14 +3,9 @@
 
 #include <limits>
 #include <string>
-#include <boost/lexical_cast.hpp>
 
 #include "include.hpp"
-#include "node.hpp"
-#include "random_generator.hpp"
-#include "result.hpp"
-#include "flow_controller.hpp"
-#include "config.hpp"
+#include "config_interface.hpp"
 
 #define INSTANCIATE_EVENT_CLASS_NAME(X) template<class Event_manager, class Event_issuer>\
                                   const std::string X<Event_manager, Event_issuer>::__name__(#X);
@@ -260,8 +255,8 @@ class Sample_event : public Event<Event_manager> {
         void handle_event() {
             // TODO result.take_snapshot()
             static std::string blocking_rate_s("Blocking_rate");
-            std::cout << this->get_event_manager().get_result().get(this->get_event_manager().get_result().get_general_key(),
-                                                                    blocking_rate_s) << std::endl;
+            //std::cout << this->get_event_manager().get_result().get(this->get_event_manager().get_result().get_general_key(),
+            //                                                        blocking_rate_s) << std::endl;
             this->get_event_manager().template add_event<Sample_event<Event_manager>>(this->get_end_event_time(),
                                                                                       this->get_handling_time() + this->get_end_event_time());
         }

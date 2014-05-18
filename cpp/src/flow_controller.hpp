@@ -6,32 +6,8 @@
 #include <tuple>
 
 #include "include.hpp"
+#include "key_generator.hpp"
 
-template <typename key_t=size_t>
-class Key_generator {
-    public:
-        Key_generator(key_t seed = key_t(1)) : counter_(seed) {}
-
-        key_t next() {
-            return ++counter_;
-        }
-
-        key_t operator()() {
-            return next();
-        }
-
-        static key_t is_valid_key(key_t key) {
-            return key != no_key;
-        }
-
-        static const key_t not_key() {
-            return no_key;
-        }
-
-    private:
-        key_t counter_;
-        static const key_t no_key = 0;
-};
 
 template <class Topology, class flow_t, class key_t=size_t, class Flow_container = std::unordered_map<key_t, flow_t>, class Key_generator=Key_generator<key_t>>
 class Flow_controller {
@@ -146,6 +122,8 @@ class FooTopology{
         typedef size_t node_key_t;
         typedef size_t edge_key_t;
         typedef std::vector<edge_key_t> path_t;
+        // Dirty hack to provide an iterator type
+        typedef path_t::iterator node_iterator;
 
         path_t shortest_path(node_key_t const & src, node_key_t const& dst) {
             path_t path = {src, dst};
@@ -157,13 +135,16 @@ class FooTopology{
         FooEdge f;
 };
 
-class FooEvent_manager {
+struct FooEvent_manager {
+    typedef typename FooTopology::edge_key_t edge_key_t;
+    typedef typename FooTopology::node_key_t node_key_t;
 };
 
 template<class edge_key_t>
 class FooFlow {
     public:
         typedef std::vector<edge_key_t> container_t;
+        typedef typename container_t::const_iterator const_iterator;
         FooFlow(container_t) {}
         container_t get_edges() {
             return container_t();
@@ -172,7 +153,7 @@ class FooFlow {
 
 int main() {
     FooTopology topo;
-    Flow_controller<FooEvent_manager, FooTopology, FooFlow<size_t>, uint32_t> fc(topo);
+    Flow_controller<FooTopology, FooFlow<size_t>, uint32_t> fc(topo);
     return EXIT_SUCCESS;
 }
 

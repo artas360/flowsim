@@ -4,15 +4,14 @@
 #include <queue>
 #include <vector>
 #include <type_traits>
-#include <boost/lexical_cast.hpp>
 
 #include "include.hpp"
 #include "allocator.hpp"
+#include "config_interface.hpp"
+#include "key_generator.hpp"
 #include "random_generator.hpp"
 #include "result.hpp"
-#include "flow_controller.hpp"
 #include "event_types.hpp"
-#include "config.hpp"
 
 
 // Reversed order comparison
@@ -112,7 +111,7 @@ class Event_manager {
         template <typename event_type_t, typename... Args>
         //void add_event(typename event_type_t::event_issuer_t const& event_issuer, Args... param) {
         void add_event(Args... param) {
-             event_list_.emplace(allocator_.construct<event_type_t>(*this, param...));
+             event_list_.emplace(allocator_.construct<event_t, event_type_t>(*this, param...));
         }
 
         void init_run() {
@@ -238,6 +237,8 @@ class Event_manager {
 
 #if TEST_EVENT
 
+#include "node.hpp"
+
 struct FooResult {
     typedef float result_value_t;
     void increase_value(std::string, Node<>) {
@@ -277,7 +278,9 @@ struct FooFlow{
 template <class Key_generator=Key_generator<size_t>>
 struct FooFlowController {
     typedef size_t FooFlowKey;
+    typedef FooFlowKey flow_key_t;
     typedef Key_generator key_generator_t;
+    typedef FooTopology topology_t;
     FooFlowController(){
     }
     void free_flow(FooFlowKey) {
@@ -309,11 +312,11 @@ struct FooSimulation {
 
 int test_event() {
     typedef size_t FooFlowKey;
-    typedef std::pair<typename FooTopology::node_key_t, Node<>> pNode;
+    typedef std::pair<typename FooTopology::node_key_t, std::reference_wrapper<Node<>>> pNode;
     FooFlowController<> ffc;
-    Event_manager<FooSimulation> evt(ffc);
+    Event_manager<FooFlowController<>> evt(ffc);
     Node<> object_node(0.1, 0.2);
-    pNode node(std::make_pair(0, object_node));
+    pNode node(std::make_pair(0, std::reference_wrapper<Node<>>(object_node)));
     FooFlowKey flow;
     Arrival_event<decltype(evt), pNode> b(evt, node);
     FTEST(b.get_handling_time() > 0);

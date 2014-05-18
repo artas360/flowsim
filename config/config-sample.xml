@@ -2,13 +2,13 @@
 <!DOCTYPE Flowsim SYSTEM "Flowsim_config.dtd">
 <Flowsim datetime="2014-04-15 10:09" version="develop">
 	<Simulation>
-		<Convergence number_samples="10" epsilon="1e-3" check_interval="1e3"/>
+		<Convergence number_samples="10" epsilon="1e-3" check_interval="1000"/>
 	</Simulation>
 	<Events>
 		<Event type="arrival_burst_event" event_target="1" trigger_type="time" trigger_value="3000" effect_value=".9"/>
         <Event type="sample_event" event_target="None" trigger_type="time" trigger_value="0." effect_value="15"/>
         <!--watcher_event will keep the simulation running until trigger-->
-		<Event type="watcher_event" event_target="None" trigger_type="time" trigger_value="15000" effect_value="0"/>
+        <Event type="watcher_event" event_target="None" trigger_type="time" trigger_value="1500000" effect_value="0"/>
 	</Events>
 	<Topology>
 		<Nodes>

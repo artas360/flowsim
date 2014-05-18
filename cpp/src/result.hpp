@@ -13,7 +13,6 @@
 #include "include.hpp"
 
 
-
 template<typename sample_value_t>
 class sample_container {
     public:

@@ -280,7 +280,7 @@ class Topology {
             return boost::vertices(g_);
         }
 
-#if TEST
+#if TEST_TOPOLOGY
         std::pair<edge_iterator, edge_iterator> edges() {
             return boost::edges(g_);
         }
@@ -315,7 +315,7 @@ container_t torus2D(size_t y, size_t x, size_t ) {
     return edges;
 }
 
-#if TEST
+#if TEST_TOPOLOGY
 
 #include <iostream>
 #include <limits>

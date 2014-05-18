@@ -83,10 +83,12 @@ class Node : public Abstract_node<_rate_t, _name_t, _id_t> {
 #endif
 
 #if TEST
+#ifndef SIMULATION
 
 template<>
 size_t Node<>::counter_ = 0;
 
+#endif
 #endif
 
 #if TEST_NODE
