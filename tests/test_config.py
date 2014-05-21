@@ -61,6 +61,7 @@ class Test_config(TestCase):
         conf = ['<?xml version="1.0" encoding="UTF-8"?>',
                 '<Flowsim datetime="2014-04-15 10:09" version="test">',
                 '<Topology>',
+                '<Ghost enabled="True"/>',
                 '<Nodes>',
                 '<Default name="" rx_slot="1" tx_slot="1"/>',
                 ('<Node id="0" name="node1" arrival_rate=".3" '
@@ -79,7 +80,7 @@ class Test_config(TestCase):
                 '</Flowsim>']
         self.dump_conf(conf)
         self.config.read()
-        nodes, links = self.config.read_topology()
+        nodes, links, ghost = self.config.read_topology()
         node1 = {"_id": 0,
                  "name": "node1",
                  "arrival_rate": .3,
@@ -104,6 +105,7 @@ class Test_config(TestCase):
                  "unidir": False,
                  "enabled": False}
         self.assertTrue(link1 in links and link2 in links)
+        self.assertEqual(ghost, True)
 
     def test_read_events(self):
         conf = ['<?xml version="1.0" encoding="UTF-8"?>',

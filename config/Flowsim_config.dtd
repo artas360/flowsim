@@ -21,11 +21,15 @@
 	trigger_value CDATA #REQUIRED
 	effect_value CDATA #IMPLIED
 >
-<!ELEMENT Topology (Nodes, Links)>
+<!ELEMENT Topology (Nodes, Links, Ghost)>
 <!ELEMENT Nodes (Default?, Node+)>
 <!ELEMENT Default (#PCDATA)>
 <!ATTLIST Default
 	name CDATA #REQUIRED
+>
+<!ELEMENT Ghost (#PCDATA)>
+<!ATTLIST Ghost
+	enabled (False|True) "False"
 >
 <!ELEMENT Node (#PCDATA)>
 <!ATTLIST Node

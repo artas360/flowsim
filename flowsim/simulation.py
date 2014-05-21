@@ -1,4 +1,6 @@
 from flowsim.physical_layer.topology import Topology
+from flowsim.physical_layer.ghost_topology import Ghost_topology
+from flowsim.physical_layer.ghost_topology import Foo_ghost_topology
 from flowsim.flow.flow_controller import Flow_controller
 from flowsim.flowsim_exception import WrongConfig
 from flowsim.random_generator import Random_generator
@@ -15,6 +17,7 @@ class Simulation(object):
         self.rand_seed = rand_seed
         self.result = Result()
         self.topology = None
+        self.ghost_topo = None
 
     # Process the conf the local object (not event, topo ...)
     def process_conf(self, param):
@@ -25,19 +28,20 @@ class Simulation(object):
             self.config = Config(open(filename))
             self.config.read()
             simualtion_conf = self.config.read_simulation()
-            nodes, edges = self.config.read_topology()
+            nodes, edges, ghost = self.config.read_topology()
             event_conf = self.config.read_events()
 
             self.process_conf(simualtion_conf)
-            self.init_simulation(nodes, edges, event_conf, simualtion_conf)
+            self.init_simulation(nodes, edges, ghost,
+                                 event_conf, simualtion_conf)
 
         except IOError:
             raise
         except WrongConfig:
             raise
 
-    def init_simulation(self, nodes, edges, user_events, simualtion_conf):
-        self.init_topology(nodes, edges)
+    def init_simulation(self, nodes, edges, ghost, user_events, simualtion_conf):
+        self.init_topology(nodes, edges, ghost)
         self.init_random_generator()
         self.init_event_manager(user_events, simualtion_conf)
         self.init_flow_controller()
@@ -55,18 +59,21 @@ class Simulation(object):
                                            user_events,
                                            simualtion_conf)
 
-    def init_topology(self, nodes, edges):
+    def init_topology(self, nodes, edges, ghost):
         # nodes -> list of int
         # edges -> list of (node1, node2) or (node1, node2, capacity)
         # or (node1, node2, capacity, weight)
+        self.ghost_topo = Ghost_topology() if ghost else Foo_ghost_topology()
         self.topology = Topology()
         self.topology.build_topology_from_int(nodes,
                                               edges,
+                                              self.ghost_topo,
                                               self.arrival_rate,
                                               self.service_rate)
 
     def init_flow_controller(self):
         self.flow_controller = Flow_controller(self.topology,
+                                               self.ghost_topo,  
                                                self.event_manager,
                                                self)
         self.event_manager.set_flow_controller(self.flow_controller)

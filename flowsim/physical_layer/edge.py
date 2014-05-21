@@ -4,16 +4,13 @@ from flowsim.flowsim_exception import EdgeAllocationError
 class Edge(object):
     infinite_weight = float("inf")
 
-    def __init__(self, capacity=1, name='', weight=1., enabled=True):
+    def __init__(self, capacity=1, name='', weight=1.):
         self.max_flows = capacity
         self.available_flows = self.max_flows
         self.passing_flows = []
         self.name = name if name != '' else str(id(self))
         self.weight = weight
         self.weight_backup = self.weight
-        self.enabled = enabled
-        if(not enabled):
-            self.disable()
 
     def allocate_flow(self, flow):
         # Flow_manager should not call in that case
@@ -36,19 +33,11 @@ class Edge(object):
         # No need to check since backup always != inf
         self.weight = self.weight_backup
 
-    def enable(self):
-        if not self.enabled:
-            self.weight = self.weight_backup
-
-    def disable(self):
-        if len(self.passing_flows) > 0:
-            raise EdgeAllocationError
-        if self.enabled:
-            self.weight_backup = self.weight
-            self.weight = Edge.infinite_weight
-
     def get_name(self):
         return self.name
+
+    def copy(self):
+        return Edge(self.max_flows, self.name, self.weight_backup)
 
 
 class Meta_edge(object):  # Interface for mutiple edges between 2 nodes
@@ -69,7 +58,7 @@ class Meta_edge(object):  # Interface for mutiple edges between 2 nodes
             return None
         else:
             self.remove_edge(selected_edge)
-            return edge
+            return selected_edge
 
     def remove_edge(self, edge):
         try:
@@ -101,3 +90,7 @@ class Meta_edge(object):  # Interface for mutiple edges between 2 nodes
             raise EdgeAllocationError
         edge.free_flow(flow)
         self.weight = min(self.edge_list, key=lambda x: x.weight).weight
+
+    def get_capacity(self):
+        return sum([x.max_flows for x in self.edge_list])
+

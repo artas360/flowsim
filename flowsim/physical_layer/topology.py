@@ -4,7 +4,8 @@ from flowsim.physical_layer.node import Node, Entry_node, Exit_node
 from flowsim.flowsim_exception import NoSuchEdge,\
     DuplicatedNodeError,\
     NoPathError,\
-    NoSuchNode
+    NoSuchNode,\
+    EdgePlugError
 
 
 class Topology(networkx.DiGraph):
@@ -22,7 +23,9 @@ class Topology(networkx.DiGraph):
     def add_nodes(self, nbunch):
         self.add_nodes_from(nbunch)
 
-    def add_edge(self, node1, node2, edge_object, edge_weight=1):
+    def add_edge(self, node1, node2, edge_object, edge_weight=None):
+        if edge_weight is None:
+            edge_weight = edge_object.weight
         try:
             edge = self[node1][node2]['object']
         except KeyError:
@@ -32,6 +35,11 @@ class Topology(networkx.DiGraph):
                 pass
             else:
                 raise ValueError
+            try:
+                node1.plug_in_edge(tx=True)
+                node2.plug_in_edge(tx=False)
+            except EdgePlugError:
+                raise
             super(self.__class__, self).add_edge(node1, node2,
                                                  {'object': edge_object,
                                                   'weight': edge_weight})
@@ -42,6 +50,11 @@ class Topology(networkx.DiGraph):
                 edge_object = Meta_edge(edge_object)
                 edge_object.add_edge(self[node1][node2])
                 self.remove_edge(node1, node2)
+                try:
+                    node1.plug_in_edge(tx=True)
+                    node2.plug_in_edge(tx=False)
+                except EdgePlugError:
+                    raise
                 super(self.__class__, self).add_edge(node1, node2,
                                                      {'object': edge_object,
                                                       'weight': edge_weight})
@@ -67,7 +80,10 @@ class Topology(networkx.DiGraph):
 
     # Will remove ONE of the edges in Meta_edge
     def remove_edge(self, node1, node2, force=False):
-        return self[node1][node2].remove_least_busy_edge(force)
+        edge = self[node1][node2]['object'].remove_least_busy_edge(force)
+        if edge is not None:
+            node1.plug_out_edge(tx=True)
+            node2.plug_out_edge(tx=False)
 
     def get_edge_object(self, node1, node2):
         return self[node1][node2]['object']
@@ -82,7 +98,7 @@ class Topology(networkx.DiGraph):
         except networkx.NetworkXNoPath:
             raise NoPathError
 
-    def build_topology_from_int(self, nodes, edges,
+    def build_topology_from_int(self, nodes, edges, ghost_topo,
                                 arrival_rate=None, service_rate=None):
         # Node identifier is _id, name is just for plots !
         # nodes -> list of int or list of (int, str) str->entry,exit
@@ -122,17 +138,20 @@ class Topology(networkx.DiGraph):
                     temp_edge['weight'] = edge[3]
                 else:
                     raise TypeError
+                temp_edge['enabled'] = True
             elif type(edge) == dict:
                 temp_edge = edge
             else:
                 raise TypeError("Unsuported edge description type, " +
                                 str(type(edge)))
             edge_list.append(temp_edge)
-        self.build_topology(node_list, edge_list, arrival_rate, service_rate)
+        self.build_topology(node_list, edge_list,
+                            ghost_topo, arrival_rate, service_rate)
 
-    def build_topology(self, nodes, edges,
-                       arrival_rate=None, service_rate=None):
+    def build_topology(self, nodes, edges, ghost_topo,
+                       arrival_rate=None, service_rate=None,):
         temp_dict = dict()
+
         for node in nodes:
             if type(node) != dict:
                 raise TypeError
@@ -163,6 +182,7 @@ class Topology(networkx.DiGraph):
                 raise DuplicatedNodeError
             temp_dict[node['_id']] = new_node
             self.add_node(new_node)
+            ghost_topo.add_node(new_node)
         self.id_to_node.update(temp_dict)
 
         for edge in edges:
@@ -175,17 +195,33 @@ class Topology(networkx.DiGraph):
                 print edge
             weight = edge.get('weight', 1)
             unidir = edge.pop('unidir', False)
+
+            enabled = edge.pop('enabled')
+
             new_edge = Edge(**edge)
-            self.add_edge(temp_dict[nodes[0]],
-                          temp_dict[nodes[1]],
-                          new_edge,
-                          weight)
+
+            # Dispatch enabled/disabled edges
+            ghost_topo.add_edge(temp_dict[nodes[0]],
+                                temp_dict[nodes[1]],
+                                new_edge,
+                                weight)
+            if enabled:
+                self.add_edge(temp_dict[nodes[0]],
+                              temp_dict[nodes[1]],
+                              new_edge.copy(),
+                              weight)
             if not unidir:
                 new_edge = Edge(**edge)
-                self.add_edge(temp_dict[nodes[1]],
-                              temp_dict[nodes[0]],
-                              new_edge,
-                              weight)
+                ghost_topo.add_edge(temp_dict[nodes[1]],
+                                    temp_dict[nodes[0]],
+                                    new_edge,
+                                    weight)
+                if enabled:
+                    self.add_edge(temp_dict[nodes[1]],
+                                  temp_dict[nodes[0]],
+                                  new_edge.copy(),
+                                  weight)
+
 
     def get_random_entry_node(self, number):
         if len(self.entry_nodes) == 0:

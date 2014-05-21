@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Flowsim SYSTEM "Flowsim_config.dtd">
+<Flowsim datetime="2014-04-15 10:09" version="develop">
+	<Simulation>
+		<Convergence number_samples="10" epsilon="1e-3" check_interval="1e3"/>
+	</Simulation>
+	<Events>
+		<Event type="arrival_burst_event" event_target="0" trigger_type="time" trigger_value="20000" effect_value=".9"/>
+        <Event type="sample_event" event_target="None" trigger_type="time" trigger_value="0." effect_value="15"/>
+        <Event type="reconfigure_topology_event" event_target="None" trigger_type="time" trigger_value="80000" effect_value="2"/>
+        <!--watcher_event will keep the simulation running until trigger-->
+		<Event type="watcher_event" event_target="None" trigger_type="time" trigger_value="100000" effect_value="0"/>
+	</Events>
+	<Topology>
+        <Ghost enabled="True"/>
+		<Nodes>
+			<Default name="" rx_slot="1" tx_slot="1"/>
+			<Node id="0" arrival_rate=".1" service_rate=".1" rx_slot="2" tx_slot="2"/>
+			<Node id="1" arrival_rate=".1" service_rate=".1" rx_slot="2" tx_slot="2"/>
+			<Node id="2" arrival_rate=".1" service_rate=".1" rx_slot="2" tx_slot="2"/>
+		</Nodes>
+		<Links>
+			<Default weight="1." capacity="1" unidirectional="True"/>
+			<Link source_id="0" destination_id="1" weight="1" capacity="1" unidirectional="False" enabled="True"/>
+			<Link source_id="1" destination_id="2" weight="1" capacity="1" unidirectional="False" enabled="True"/>
+			<Link source_id="2" destination_id="0" weight="1" capacity="1" unidirectional="False" enabled="False"/>
+		</Links>
+	</Topology>
+</Flowsim>

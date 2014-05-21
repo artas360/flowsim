@@ -1,5 +1,4 @@
-from flowsim.flowsim_exception import EdgePlugInError
-from flowsim.flowsim_exception import EdgePlugOutError
+from flowsim.flowsim_exception import EdgePlugError
 
 
 class Node(object):
@@ -38,24 +37,28 @@ class Node(object):
     def plug_in_edge(self, tx=True):
         if tx:
             if(self.tx_slot <= 0):
-                raise EdgePlugInError
+                raise EdgePlugError
             self.tx_slot -= 1
         else:
             if(self.rx_slot <= 0):
-                raise EdgePlugInError
+                raise EdgePlugError
             self.rx_slot -= 1
 
     def plug_out_edge(self, tx=True):
         if tx:
             if(self.tx_slot >= self.tx_slot_max):
-                raise EdgePlugOutError
+                raise EdgePlugError
             self.tx_slot += 1
         else:
             if(self.rx_slot >= self.rx_slot_max):
-                raise EdgePlugOutError
+                raise EdgePlugError
             self.rx_slot += 1
 
+    def available_tx(self):
+        return self.tx_slot > 0
 
+    def available_rx(self):
+        return self.rx_slot > 0
 
 def foo_node():
     node = Node(0., 0., 0)

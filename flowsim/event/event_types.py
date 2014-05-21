@@ -165,8 +165,7 @@ class User_event_analyzer(object):
             self.event_manager.add_event(Reconfigure_topology_event,
                                          "User",
                                          handling_time=handling_time,
-                                         time_interval=effect_value,
-                                         algorithm=effect_value)
+                                         treshold=effect_value)
         elif event_description["type"] == "watcher_event":
             self.event_manager.add_event(Watcher_event,
                                          "User",
@@ -188,25 +187,6 @@ class Sample_event(Event):  # Should not be User_event or infinite loop
                                      handling_time=(self.handling_time +
                                                     self.time_interval),
                                      time_interval=self.time_interval)
-
-
-# Should not be User_event or infinite loop
-class Reconfigure_topology_event(Event):
-    def __init__(self, event_manager, event_issuer, **kwargs):
-        super(self.__class__, self).__init__(event_manager, event_issuer)
-        self.handling_time = kwargs.pop("handling_time")
-        self.time_interval = kwargs.pop("time_interval")
-        self.algorithm = kwargs.pop("algorithm")
-
-    def handle_event(self):
-        self.event_manager.get_flow_controller().\
-            reconfigure_topology(self.result, self.algorithm)
-        self.event_manager.add_event(self.__class__,
-                                     self.event_issuer,
-                                     handling_time=(self.handling_time +
-                                                    self.time_interval),
-                                     time_interval=self.time_interval,
-                                     algorithm=self.algorithm)
 
 
 class User_event(Event):
@@ -237,6 +217,17 @@ class Arrival_burst_event(User_event):
         topo.swap_node_arr_rate(self.target, self.new_arrival_rate)
 
 
+class Reconfigure_topology_event(User_event):
+    def __init__(self, event_manager, event_issuer, **kwargs):
+        super(self.__class__, self).__init__(event_manager, event_issuer)
+        self.handling_time = kwargs.pop("handling_time")
+        self.treshold = kwargs.pop("treshold")
+
+    def handle_event(self):
+        self.event_manager.get_flow_controller().\
+            reconfigure_topology(self.result, self.treshold)
+
+
 Event_type_list = [Arrival_Event,
                    End_flow_Event,
                    End_of_simulation_Event,
@@ -244,5 +235,6 @@ Event_type_list = [Arrival_Event,
                    Flow_allocation_failure_Event,
                    Arrival_burst_event,
                    Sample_event,
-                   Watcher_event
+                   Watcher_event,
+                   Reconfigure_topology_event
                    ]

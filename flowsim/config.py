@@ -135,11 +135,14 @@ class Config:
         node_list = []
         link_list = []
         for field in self.topology_conf:
+            ghost_topo = self.topology_conf[0].getElementsByTagName("Ghost")
+            ghost_topo = ghost_topo[0].getAttribute('enabled')
+            ghost_topo = True if ghost_topo == "True" else False
             tmp1, tmp2 = self.read_nodes(field)
             node_list += (tmp1)
             node_id_list += (tmp2)
             link_list += self.read_links(field, node_id_list)
-        return node_list, link_list
+        return node_list, link_list, ghost_topo
 
     def read_events(self):
         return self.generic_leaf_read(self.event_conf, 'Event')

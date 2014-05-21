@@ -38,9 +38,5 @@ class WrongConfig(Exception):
     pass
 
 
-class EdgePlugInError(Exception):
-    pass
-
-
-class EdgePlugOutError(Exception):
+class EdgePlugError(Exception):
     pass

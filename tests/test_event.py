@@ -38,6 +38,9 @@ class Flow_controller(object):
     def get_topology(self):
         return Topo()
 
+    def reconfigure_topology(self, results, treshold):
+        pass
+
 
 class Node(object):
 
@@ -113,6 +116,12 @@ class Test_Event_manager(TestCase):
         event_manager.add_event(Watcher_event,
                                 "User",
                                 handling_time=0)
+        event_count += 1
+
+        event_manager.add_event(Reconfigure_topology_event,
+                                "User",
+                                handling_time=0,
+                                treshold=2)
         event_count += 1
 
         # Checking that all events are tested
