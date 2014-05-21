@@ -73,6 +73,7 @@ class Topology {
         typedef typename Node::name_t node_name_t;
         typedef Node node_t;
         typedef Edge edge_t;
+        typedef typename node_t::id_t id_t;
 
     public:
         Topology() : g_() {
