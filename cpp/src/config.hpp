@@ -53,7 +53,7 @@ int parse_config(const char* filename,
 
     try {
         walker = doc->createTreeWalker(docRootNode, DOMNodeFilter::SHOW_ELEMENT, nullptr, true);
-    } catch (xercesc_3_1::DOMException const& e) {
+    } catch (xercesc_3_1::DOMException const&) {
         std::cerr << "DOM_EXCEPTION" << std::endl;
         std::cerr << "Check if DTD path is right in " << filename << std::endl;
         return EXIT_FAILURE;
