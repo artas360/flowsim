@@ -16,7 +16,7 @@ flowsim: $(SOURCES)
 		$(CC) $(CFLAGS) -DSIMULATION -DNDEBUG -DBOOST_DISABLE_THREADS -O3 simulation.cpp $(LDFLAGS) -o flowsim 
 
 flowsim-debug: $(SOURCES)
-		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DSIMULATION -DNDEBUGFLAGS -DBOOST_DISABLE_THREADS simulation.cpp $(LDFLAGS) -o flowsim 
+		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DSIMULATION -DNDEBUG -DBOOST_DISABLE_THREADS simulation.cpp $(LDFLAGS) -o flowsim 
 
 config: config.cpp
 		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DTEST_CONFIG config.cpp $(LDFLAGS) -o test_config
