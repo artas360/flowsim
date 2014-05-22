@@ -1,5 +1,6 @@
 CC=clang++
-CFLAGS=-std=c++11 -Wall -Wextra -Werror
+#CC=~/intel/bin/icpc
+CFLAGS=-std=c++11 -Wall -Wextra -Werror -march=native
 LDFLAGS=-lxerces-c
 DEBUGFLAGS=-g3 -DTEST
 SOURCES=simulation.cpp config.cpp edge.cpp flow.cpp flow_controller.cpp node.cpp random_generator.cpp result.cpp event.cpp topology.cpp 
@@ -16,7 +17,7 @@ flowsim: $(SOURCES)
 		$(CC) $(CFLAGS) -DSIMULATION -DNDEBUG -DBOOST_DISABLE_THREADS -O3 simulation.cpp $(LDFLAGS) -o flowsim 
 
 flowsim-debug: $(SOURCES)
-		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DSIMULATION -DNDEBUG -DBOOST_DISABLE_THREADS simulation.cpp $(LDFLAGS) -o flowsim 
+		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DSIMULATION -DNDEBUG -DBOOST_DISABLE_THREADS simulation.cpp $(LDFLAGS) -o flowsim
 
 config: config.cpp
 		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DTEST_CONFIG config.cpp $(LDFLAGS) -o test_config
