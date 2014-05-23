@@ -249,16 +249,15 @@ template <class Event_manager>
 class Sample_event : public Event<Event_manager> {
     typedef typename Event<Event_manager>::event_time_t event_time_t;
     public:
-        Sample_event(Event_manager &event_manager, event_time_t time_interval, event_time_t handling_time) : Event<Event_manager>(event_manager, time_interval, handling_time) {
+        Sample_event(Event_manager &event_manager, event_time_t time_interval, event_time_t handling_time, std::string const& sample_target) : Event<Event_manager>(event_manager, time_interval, handling_time), sample_target_(sample_target) {
         }
 
         void handle_event() {
             // TODO result.take_snapshot()
-            static std::string blocking_rate_s("Blocking_rate");
-            //std::cout << this->get_event_manager().get_result().get(this->get_event_manager().get_result().get_general_key(),
-            //                                                        blocking_rate_s) << std::endl;
+            this->get_event_manager().get_result().record_value(sample_target_, this->get_handling_time());
             this->get_event_manager().template add_event<Sample_event<Event_manager>>(this->get_end_event_time(),
-                                                                                      this->get_handling_time() + this->get_end_event_time());
+                                                                                      this->get_handling_time() + this->get_end_event_time(),
+                                                                                      sample_target_);
         }
 
         virtual void automated_update_result() {
@@ -270,6 +269,7 @@ class Sample_event : public Event<Event_manager> {
 
     private:
         static const std::string __name__;
+        const std::string sample_target_;
 };
 INSTANCIATE_USER_EVENT_NAME(Sample_event)
 
@@ -386,31 +386,32 @@ class User_event_analyzer {
             // float most generic?
             float effect_value;
             // Only node target ???
-            node_id_t event_target;
+            description_value_t event_target;
             std::string tmp;
             try {
                 type = boost::lexical_cast<std::string, description_value_t>(event_description.at(type_s));
                 handling_time = boost::lexical_cast<event_time_t, description_value_t>(event_description.at(trigger_value_s));
                 effect_value = boost::lexical_cast<float, description_value_t>(event_description.at(effect_value_s));
-                if((tmp = event_description.at(event_target_s)) != std::string("None"))
-                    event_target = boost::lexical_cast<node_id_t, description_value_t>(tmp);
+                event_target = event_description.at(event_target_s);
+
+                if(type == std::string("arrival_burst_event")) {
+                    node_id_t target_node = boost::lexical_cast<node_id_t, description_value_t>(event_target);
+                    event_manager_.template add_event<Arrival_burst_event<Event_manager>>(handling_time,
+                                                                                          event_manager_.get_flow_controller().get_topology().id_to_key(target_node),
+                                                                                          effect_value);
+                } else if(type == std::string("sample_event")) {
+                    event_manager_.template add_event<Sample_event<Event_manager>>(effect_value,
+                                                                                   handling_time,
+                                                                                   event_target);
+                } else if(type == std::string("watcher_event")) {
+                    event_manager_.template add_event<Watcher_event<Event_manager>>(handling_time);
+                } else {
+                    throw Configuration_error("Unknown event type.");
+                }
             } catch (std::out_of_range const&) {
                 throw Configuration_error("Missing field in event description.");
             } catch (boost::bad_lexical_cast const&) {
                 throw Configuration_error("Invalid field in Simulation configuration.");
-            }
-
-            if(type == std::string("arrival_burst_event")) {
-                event_manager_.template add_event<Arrival_burst_event<Event_manager>>(handling_time,
-                                                                                      event_manager_.get_flow_controller().get_topology().id_to_key(event_target),
-                                                                                      effect_value);
-            } else if(type == std::string("sample_event")) {
-                event_manager_.template add_event<Sample_event<Event_manager>>(effect_value,
-                                                                               handling_time);
-            } else if(type == std::string("watcher_event")) {
-                event_manager_.template add_event<Watcher_event<Event_manager>>(handling_time);
-            } else {
-                throw Configuration_error("Unknown event type.");
             }
         }
 

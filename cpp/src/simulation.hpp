@@ -2,6 +2,7 @@
 #define __SIMULATION_HPP__
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 #include "include.hpp"
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
 
     // Event types
     typedef float time;
-    typedef Result<node_key_t, float> result_t;
+    typedef Result<node_key_t, float, time> result_t;
     typedef Event_manager<flow_controller_t, time, result_t> event_manager_t;
 
     // Simulation
@@ -100,21 +101,23 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    // std::vector<std::tuple<node_id_t, node_id_t, edge_t>> description = {std::make_tuple(0, 1, edge_t(1, 1)),
-    //                                                            std::make_tuple(0, 2, edge_t(1, 1)),
-    //                                                            std::make_tuple(1, 2, edge_t(1, 1))};
-    //                                                            //std::make_tuple(2, 3, edge_t(1, 1)),
-    //                                                            //std::make_tuple(3, 0, edge_t(1, 1))};
+    // TODO check file
+    char *tmpname = strdup("/tmp/flowsim.out.XXXXXX");
+    mkstemp(tmpname);
+    std::ofstream f(tmpname);
 
     try {
         simulation_t simulation(argv[1]);
         result_t results = simulation.launch_simulation();
         std::cout << results << std::endl;
+        //results.stream_samples(f, "Blocking_rate");
     } catch(Configuration_error const& ce) {
         std::cerr << "Error parsing configuration file: " << argv[1] << std::endl;
         std::cerr << ce.what() << std::endl;
         return EXIT_FAILURE;
     }
+
+    f.close();
 
     return EXIT_SUCCESS;
 }

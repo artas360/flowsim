@@ -48,6 +48,7 @@ class sample_container {
 // result_value_t should be default constructed at 0
 template <class result_key_t,
           typename result_value_t=float,
+          typename _time_t=float,
           class result_container_t=std::unordered_map<result_key_t, std::unordered_map<std::string, result_value_t>>,
           class sample_container_t=sample_container<result_value_t>>
 class Result {
@@ -55,14 +56,13 @@ class Result {
     public:
 
         typedef result_value_t value_t;
-        // General results stored in general_key_
-        // typedef std::unordered_map<std::string, result_value_t> general_results_t;
         typedef typename result_container_t::mapped_type submap_t;
-        // typedef typename std::function<result_value_t(result_value_t, std::function<result_value_t(submap_t, result_value_t)>)> compute_function_t;
         typedef typename std::function<result_value_t(submap_t const&, result_value_t const&, std::string, std::string)> compute_function_t;
         typedef typename std::function<result_value_t(submap_t const&, result_value_t const&)> binded_compute_function_t;
         typedef std::unordered_map<std::string, std::tuple<bool, binded_compute_function_t, bool>> function_map_t;
         typedef std::unordered_map<std::string, sample_container_t> convergence_map_t;
+        typedef std::pair<_time_t, result_value_t> user_sample_t;
+        typedef std::unordered_map<std::string, std::vector<user_sample_t>> user_sample_container_t;
 
         Result() : results_() {
         }
@@ -136,11 +136,25 @@ class Result {
 
         result_value_t const& get(result_key_t const& result_key, std::string const& value_name) {
             // Will emplace new element if wrong key input
-            typename function_map_t::const_iterator it(function_map_.find(value_name));
-            if(it != function_map_.end())
+            if(function_map_.find(value_name) != function_map_.cend())
                 return get_computed_value(result_key, value_name);
             else
                 return results_[result_key][value_name];
+        }
+
+        void record_value(std::string const& value_name, _time_t const& time) {
+            user_sample_container_[value_name].emplace_back(time, get(general_key_, value_name));
+        }
+
+        std::ostream& stream_samples(std::ostream &out, std::string const& value_name) const {
+            typename user_sample_container_t::const_iterator it(user_sample_container_.find(value_name));
+
+            if(it != user_sample_container_.cend()) {
+                for(auto it2: std::get<1>(*it))
+                    if(std::isfinite(it2.second))
+                        out << it2.first << ' ' << it2.second << ' ';
+            }
+            return out;
         }
 
         // Can't be const because get can reevaluate a value
@@ -178,6 +192,7 @@ class Result {
         result_container_t results_;
         function_map_t function_map_;
         convergence_map_t convergence_map_;
+        user_sample_container_t user_sample_container_;
         const result_key_t general_key_ = std::numeric_limits<result_key_t>::has_quiet_NaN ?
                                             std::numeric_limits<result_key_t>::quiet_NaN() :
                                             std::numeric_limits<result_key_t>::max();
