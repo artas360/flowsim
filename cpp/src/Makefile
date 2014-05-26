@@ -9,7 +9,7 @@ EXECUTABLES=flowsim test_config test_edge test_flow test_flow_controller test_no
 
 all: flowsim 
 
-test: config edge flow flow_controller node random_generator result event topology
+test: config flow flow_controller random_generator result event topology
 
 debug: flowsim-debug test
 
@@ -21,9 +21,6 @@ flowsim-debug: $(SOURCES)
 
 config: config.cpp
 		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DTEST_CONFIG config.cpp $(LDFLAGS) -o test_config
-
-edge: edge.cpp
-		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DTEST_EDGE edge.cpp -o test_edge
 
 event: event.cpp
 		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DTEST_EVENT -DBOOST_DISABLE_THREADS event.cpp -o test_event
@@ -39,9 +36,6 @@ random_generator: random_generator.cpp
 
 result: result.cpp
 		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DTEST_RESULT result.cpp -o test_result
-
-node: node.cpp
-		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DTEST_NODE node.cpp -o test_node
 
 topology: topology.cpp
 		$(CC) $(CFLAGS) $(DEBUGFLAGS) -DTEST_TOPOLOGY topology.cpp -o test_topology

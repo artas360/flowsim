@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
         simulation_t simulation(argv[1]);
         result_t results = simulation.launch_simulation();
         std::cout << results << std::endl;
-        //results.stream_samples(f, "Blocking_rate");
+        results.stream_samples(f, "Blocking_rate");
     } catch(Configuration_error const& ce) {
         std::cerr << "Error parsing configuration file: " << argv[1] << std::endl;
         std::cerr << ce.what() << std::endl;

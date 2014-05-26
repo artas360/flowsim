@@ -105,38 +105,3 @@ class Edge : public Abstract_edge<flow_key_t, _weight, flow_container_t> {
 };
 
 #endif
-
-#if TEST_EDGE
-
-#include <iostream>
-
-int test_edge() {
-    Edge<float> a, b(2, 3);
-
-    b.allocate_flow(2);
-    FTEST(*(b.get_flows().cbegin()) == 2);
-    
-    Edge<float> c(b);
-    FTEST(*(c.get_flows().cbegin()) == 2);
-
-    b.free_flow(2);
-    FTEST(b.get_flows().empty());
-    FTEST(*(c.get_flows().cbegin()) == 2);
-
-    FTEST(c.get_weight() == 3 and b.get_weight() == 3);
-
-    ASSERT_RAISES(Edge<float>, 0, 1);
-
-    b.allocate_flow(1);
-    b.allocate_flow(2);
-    ASSERT_RAISES(b.allocate_flow, 3);
-    ASSERT_NOT_RAISES(b.free_flow, 5);
-
-    return EXIT_SUCCESS;
-}
-
-int main() {
-    return test_edge();
-}
-
-#endif
