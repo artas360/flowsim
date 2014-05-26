@@ -18,7 +18,7 @@ class Abstract_node {
 
 template <typename _rate_t=float, typename _name_t=std::string, typename _id_t=size_t>
 class Node : public Abstract_node<_rate_t, _name_t, _id_t> {
-    // TODO initialize somewhere
+
     public:
         typedef _rate_t rate_t;
         typedef _name_t name_t;
@@ -79,37 +79,5 @@ class Node : public Abstract_node<_rate_t, _name_t, _id_t> {
             return service_rate_;
         }
 };
-
-#endif
-
-#if TEST
-#ifndef SIMULATION
-
-template<>
-size_t Node<>::counter_ = 0;
-
-#endif
-#endif
-
-#if TEST_NODE
-
-int test_node() {
-    Node<> a, b(.1, .2, "bolt"), c(b), d(.3, .4);
-
-    FTEST(b.get_name() == "bolt" and c.get_name() == "bolt");
-    FTEST(b.get_number() == 1 and c.get_number() == 1);
-    FTEST((b.get_arrival_rate() - 0.1) < std::numeric_limits<float>::epsilon() and
-          (c.get_arrival_rate() - 0.1) < std::numeric_limits<float>::epsilon());
-    FTEST((b.get_service_rate() - 0.2) < std::numeric_limits<float>::epsilon() and
-          (c.get_service_rate() - 0.2) < std::numeric_limits<float>::epsilon());
-    FTEST(d.get_number() == 2);
-    ASSERT_RAISES(Node<>, -1, 0);
-
-    return EXIT_SUCCESS;
-}
-
-int main() {
-    return test_node();
-}
 
 #endif
