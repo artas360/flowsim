@@ -130,7 +130,7 @@ class Result {
             return process_function(values);
         }
 
-        inline result_key_t const& get_general_key() const {
+        constexpr result_key_t const& get_general_key() const {
             return general_key_;
         }
 
@@ -194,8 +194,8 @@ class Result {
         convergence_map_t convergence_map_;
         user_sample_container_t user_sample_container_;
         const result_key_t general_key_ = std::numeric_limits<result_key_t>::has_quiet_NaN ?
-                                            std::numeric_limits<result_key_t>::quiet_NaN() :
-                                            std::numeric_limits<result_key_t>::max();
+                                          std::numeric_limits<result_key_t>::quiet_NaN() :
+                                          std::numeric_limits<result_key_t>::max();
 };
 
 template <class result_key_t, typename result_value_t, class result_container_t>
