@@ -1,8 +1,6 @@
 #ifndef __ALLOCATOR_HPP__
 #define __ALLOCATOR_HPP__
 
-#include <boost/pool/pool_alloc.hpp>
-
 #include "include.hpp"
 
 struct FooAllocator {
