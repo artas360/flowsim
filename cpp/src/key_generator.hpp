@@ -7,6 +7,7 @@ class Key_generator {
     public:
         Key_generator(key_t seed = key_t(1)) : counter_(seed) {}
 
+        // Will start at seed + 1
         key_t next() {
             return ++counter_;
         }

@@ -29,8 +29,10 @@ class Flow_controller {
             assert(Key_generator::is_valid_key(flow_key));
             std::pair<typename Flow_container::iterator, bool> pair;
 
-            typename Topology::path_t shortest_path = topology_.shortest_path(src, dst);
+            static typename Topology::path_t shortest_path;
+            topology_.shortest_path(src, dst, shortest_path);
             if(not shortest_path.empty()) {
+                // TODO ? swap content to avoid shortest_path.clear in topo.shortest_path
                 pair = flows_.emplace(flow_key, shortest_path);
                 assert(pair.second);
             }
@@ -106,55 +108,5 @@ class Flow_controller {
         Flow_container flows_;
         Key_generator key_gen_;
 };
-
-#endif
-
-#if TEST_FLOW_CONTROLLER
-
-class FooEdge {
-    public:
-    void free_flow(size_t) {}
-    void allocate_flow(size_t) {}
-};
-
-class FooTopology{
-    public:
-        typedef size_t node_key_t;
-        typedef size_t edge_key_t;
-        typedef std::vector<edge_key_t> path_t;
-        // Dirty hack to provide an iterator type
-        typedef path_t::iterator node_iterator;
-
-        path_t shortest_path(node_key_t const & src, node_key_t const& dst) {
-            path_t path = {src, dst};
-            return path;
-        }
-        FooEdge & get_edge_object(edge_key_t const&){
-            return f;
-        }
-        FooEdge f;
-};
-
-struct FooEvent_manager {
-    typedef typename FooTopology::edge_key_t edge_key_t;
-    typedef typename FooTopology::node_key_t node_key_t;
-};
-
-template<class edge_key_t>
-class FooFlow {
-    public:
-        typedef std::vector<edge_key_t> container_t;
-        typedef typename container_t::const_iterator const_iterator;
-        FooFlow(container_t) {}
-        container_t get_edges() {
-            return container_t();
-        }
-};
-
-int main() {
-    FooTopology topo;
-    Flow_controller<FooTopology, FooFlow<size_t>, uint32_t> fc(topo);
-    return EXIT_SUCCESS;
-}
 
 #endif

@@ -1,7 +1,6 @@
 #ifndef __FLOW_HPP__
 #define __FLOW_HPP__
 
-#include <functional>
 #include <vector>
 
 #include "include.hpp"
