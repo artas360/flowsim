@@ -122,7 +122,6 @@ class Topology {
             // Do not use! creates strange Nodes
             //g_ = Graph(node_count > 0 ? node_count : last - first);
 
-            typedef typename std::tuple_element<0, typename input_iterator::value_type>::type base_type;
             typename id_to_key_map_t::const_iterator node_map_pos, node_map_end = id_to_key_.cend();
 
             vertex_descriptor src_node, dst_node;
