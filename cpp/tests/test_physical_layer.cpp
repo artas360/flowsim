@@ -27,10 +27,10 @@ BOOST_AUTO_TEST_CASE( test_constructors )
     BOOST_CHECK_EQUAL( c.get_name(), "bolt" );
     BOOST_CHECK_EQUAL( b.get_number(), 1 );
     BOOST_CHECK_EQUAL( c.get_number(), 1 );
-    BOOST_CHECK( (b.get_arrival_rate() - 0.1) < std::numeric_limits<rate_t>::epsilon() and
-                 (c.get_arrival_rate() - 0.1) < std::numeric_limits<rate_t>::epsilon() );
-    BOOST_CHECK( (b.get_service_rate() - 0.2) < std::numeric_limits<rate_t>::epsilon() and
-                 (c.get_service_rate() - 0.2) < std::numeric_limits<rate_t>::epsilon() );
+    BOOST_CHECK_CLOSE( b.get_arrival_rate(), 0.1, 1e-3 );
+    BOOST_CHECK_CLOSE( c.get_arrival_rate(), 0.1, 1e-3 );
+    BOOST_CHECK_CLOSE( b.get_service_rate(), 0.2, 1e-3 );
+    BOOST_CHECK_CLOSE( c.get_service_rate(), 0.2, 1e-3 );
     BOOST_CHECK_EQUAL( d.get_number(), 2 );
     BOOST_CHECK_EXCEPTION( Node<>(-1, 0), Wrong_parameter, [](Wrong_parameter const&){return true;} );
 }
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE( test_swap )
 {
     TNode a(.1, .2);
     a.swap_arr_rate(.9);
-    BOOST_CHECK( (a.get_arrival_rate() - .9) < std::numeric_limits<rate_t>::epsilon() );
+    BOOST_CHECK_CLOSE( a.get_arrival_rate(), .9, 1e-3 );
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -138,8 +138,8 @@ BOOST_AUTO_TEST_CASE( test_import_topology_from_description )
     BOOST_CHECK_EQUAL( node_map[topo2.id_to_key(3)].get_name(), 3 );
 
     // TODO switch to boost is_close algo
-    BOOST_CHECK( (node_map[topo2.id_to_key(3)].get_arrival_rate() - .5) <= std::numeric_limits<rate_t>::epsilon() );
-    BOOST_CHECK( (node_map[topo2.id_to_key(3)].get_service_rate() - .6) <= std::numeric_limits<rate_t>::epsilon() );
+    BOOST_CHECK_CLOSE( node_map[topo2.id_to_key(3)].get_arrival_rate(), .5, 1e-3 );
+    BOOST_CHECK_CLOSE( node_map[topo2.id_to_key(3)].get_service_rate(), .6, 1e-3 );
 
     // TODO test edges
 }

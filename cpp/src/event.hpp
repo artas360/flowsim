@@ -209,11 +209,9 @@ class Event_manager {
             --remaining_user_events_;
         }
 
-#if TEST_EVENT
-        event_t* const& top() const {
+        const event_t* top() const {
             return event_list_.top();
         }
-#endif
 
     private:
         typedef FooAllocator Allocator;
