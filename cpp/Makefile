@@ -3,6 +3,7 @@ CXXFLAGS=-std=c++11 -Wall -Wextra -Werror -O3 -DNDEBUG -march=native -I./src $(O
 LDFLAGS= $(OPTLIBS)
 LDCONFIG=-lxerces-c
 SOURCES=$(wildcard src/**/*.cpp src/*.cpp)
+HEADERS=$(wildcard src/**/*.hpp src/*.hpp)
 OBJECTS=$(patsubst %.cpp,%.o,$(SOURCES))
 
 TEST_SRC=$(wildcard tests/test_*.cpp)
@@ -35,7 +36,11 @@ tests: $(TESTS)
 valgrind:
 		VALGRIND="valgrind --log-file=/tmp/valgrind-%p.log" $(MAKE)
 
+doc: $(SOURCES) $(HEADERS)
+		doxygen Doxyfile
+
 clean:
 		rm -rf build $(OBJECTS) $(TESTS)
 		rm -f tests/tests.log
 		rm -f build/$(TARGET)
+		rm -rf doc/*

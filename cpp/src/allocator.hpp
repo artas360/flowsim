@@ -3,6 +3,11 @@
 
 #include "include.hpp"
 
+/**
+ * \class FooAllocator
+ * \brief Simple allocator class.
+ * \todo replace with more efficient small alloc allocator.
+ */
 struct FooAllocator {
         template <class Base, class T, typename... Args>
         T* construct(Args&&... params) {
