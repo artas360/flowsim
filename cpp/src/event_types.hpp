@@ -7,10 +7,16 @@
 #include "include.hpp"
 #include "config_interface.hpp"
 
+// Macro used to generate the __class__ methods in class inheriting Event.
 #define INSTANCIATE_EVENT_CLASS_NAME(X) template<class Event_manager, class Event_issuer>\
                                   const std::string X<Event_manager, Event_issuer>::__name__(#X);
 #define INSTANCIATE_USER_EVENT_NAME(X) template<class Event_manager>\
                                   const std::string X<Event_manager>::__name__(#X);
+
+/**
+ * \class Event
+ * \brief Base class of all events handled by Event_manager.
+ */
 template <class Event_manager>
 class Event {
     public:
@@ -20,10 +26,25 @@ class Event {
         Event(Event_manager &event_manager, event_time_t end_event_time, event_time_t handling_time) : event_manager_(event_manager), end_event_time_(end_event_time), handling_time_(handling_time) {}
         virtual ~Event() {}
 
+        /** 
+         * \brief Function called when the event is handled by the Event_manager.
+         */
         virtual void handle_event() = 0;
-        virtual void automated_update_result() = 0;
 
-        virtual void update_result() {
+        /** 
+         * \brief Function called to update results after the event has been handled.
+         *
+         * This function is called after the event has been handled.
+         * It should be used for envent classes
+         * that need all of their children classes to perform a task after
+         * being handled.
+         */
+        virtual void automated_update_result(typename Event_manager::result_t &) = 0;
+
+        /**
+         * \brief Function to be called by automated_update_result() for class specific result behaviour.
+         */
+        virtual void update_result(typename Event_manager::result_t &) {
         }
 
         virtual event_time_t get_handling_time() const {
@@ -34,9 +55,16 @@ class Event {
             return end_event_time_;
         }
 
+        /**
+         * \brief Function called after the event has been handled.
+         */
         virtual void post_handle() {
         }
 
+        /**
+         * \brief returns the name of the last inherited class of the object.
+         * \return A std:string description of the class name.
+         */
         virtual std::string const& __class__() const = 0;
 
     protected:
@@ -59,7 +87,10 @@ class Event {
         event_time_t handling_time_;
 };
 
-
+/**
+ * \class Specialized_event
+ * \brief Class inherited by all classes issued by nodes (directly or not). 
+ */
 template <class Event_manager, class Event_issuer>
 class Specialized_event : public Event<Event_manager>{
 
@@ -71,11 +102,12 @@ class Specialized_event : public Event<Event_manager>{
         }
         virtual ~Specialized_event() {}
 
-        virtual void automated_update_result() {
-            this->get_event_manager().get_result().increase_value(this->__class__(),
-                                                                  this->get_event_manager().get_result().get_general_key());
-            this->get_event_manager().get_result().increase_value(this->__class__(),
-                                                                  std::get<0>(event_issuer_));
+        virtual void automated_update_result(typename Event_manager::result_t & result) {
+            result.increase_value(this->__class__(),
+                                  result.get_general_key());
+            result.increase_value(this->__class__(),
+                                  std::get<0>(event_issuer_));
+            this->update_result(result);
         }
 
     // TODO  protected
@@ -97,7 +129,10 @@ class Specialized_event : public Event<Event_manager>{
 };
 INSTANCIATE_EVENT_CLASS_NAME(Specialized_event)
 
-
+/**
+ * \class End_flow_event
+ * \brief Event created when a flow ends.
+ */
 template <class Event_manager, class Event_issuer>
 class End_flow_event : public Specialized_event<Event_manager, Event_issuer> {
     typedef typename Event_manager::flow_key_t flow_t;
@@ -123,6 +158,10 @@ class End_flow_event : public Specialized_event<Event_manager, Event_issuer> {
 INSTANCIATE_EVENT_CLASS_NAME(End_flow_event)
 
 
+/**
+ * \class End_of_simulation_event
+ * \brief Event created when the simulation has to be stopped.
+ */
 template <class Event_manager, class Event_issuer>
 class End_of_simulation_event : public Specialized_event<Event_manager, Event_issuer> {
     public:
@@ -145,6 +184,10 @@ class End_of_simulation_event : public Specialized_event<Event_manager, Event_is
 INSTANCIATE_EVENT_CLASS_NAME(End_of_simulation_event)
 
 
+/**
+ * \class Flow_allocation_success_event
+ * \brief Event created when a flow has been successfully established.
+ */
 template <class Event_manager, class Event_issuer>
 class Flow_allocation_success_event: public Specialized_event<Event_manager, Event_issuer> {
     public:
@@ -156,7 +199,7 @@ class Flow_allocation_success_event: public Specialized_event<Event_manager, Eve
         void handle_event() {
         }
 
-        void update_result() {
+        void update_result(typename Event_manager::result_t &) {
             #if 0 //Need support for register_new_result
             this->get_event_manager().get_result().update_computed_value(std::string("mean_nodes_per_flow"),
                                                                          this->get_event_manager().get_result().get_general_key(),
@@ -175,6 +218,10 @@ class Flow_allocation_success_event: public Specialized_event<Event_manager, Eve
 INSTANCIATE_EVENT_CLASS_NAME(Flow_allocation_success_event)
 
 
+/**
+ * \class Flow_allocation_failure_event
+ * \brief Event created when a flow could not be established.
+ */
 template <class Event_manager, class Event_issuer>
 class Flow_allocation_failure_event: public Specialized_event<Event_manager, Event_issuer> {
     public:
@@ -182,11 +229,6 @@ class Flow_allocation_failure_event: public Specialized_event<Event_manager, Eve
         }
 
         void handle_event() {
-        }
-
-        void update_result() {
-            this->get_event_manager().get_result().increase_value(this->__class__(),
-                                                                  std::get<0>(this->get_event_issuer()));
         }
 
         std::string const& __class__() const {
@@ -199,6 +241,10 @@ class Flow_allocation_failure_event: public Specialized_event<Event_manager, Eve
 INSTANCIATE_EVENT_CLASS_NAME(Flow_allocation_failure_event)
 
 
+/**
+ * \class Arrival_event
+ * \brief Event created when a flow request is emited by a Node.
+ */
 template <class Event_manager, class Event_issuer>
 class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
     typedef typename Event_manager::flow_key_t flow_t;
@@ -244,7 +290,11 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
 INSTANCIATE_EVENT_CLASS_NAME(Arrival_event)
 
 
-// Shouldn't inherit User_event or infinite loop
+/**
+ * \class Sample_event
+ * \brief Event created when a sample of one result value has to be recorded.
+ * \warning Should not inherit User_event or it would create an infinite loop.
+ */
 template <class Event_manager>
 class Sample_event : public Event<Event_manager> {
     typedef typename Event<Event_manager>::event_time_t event_time_t;
@@ -253,14 +303,13 @@ class Sample_event : public Event<Event_manager> {
         }
 
         void handle_event() {
-            // TODO result.take_snapshot()
-            this->get_event_manager().get_result().record_value(sample_target_, this->get_handling_time());
             this->get_event_manager().template add_event<Sample_event<Event_manager>>(this->get_end_event_time(),
                                                                                       this->get_handling_time() + this->get_end_event_time(),
                                                                                       sample_target_);
         }
 
-        virtual void automated_update_result() {
+        virtual void automated_update_result(typename Event_manager::result_t & result) {
+            result.record_value(sample_target_, this->get_handling_time());
         }
 
         virtual std::string const& __class__() const {
@@ -274,6 +323,10 @@ class Sample_event : public Event<Event_manager> {
 INSTANCIATE_USER_EVENT_NAME(Sample_event)
 
 
+/**
+ * \class User_event
+ * \brief Parent class of regular user events.
+ */
 template <class Event_manager>
 class User_event : public Event<Event_manager> {
     public:
@@ -288,9 +341,9 @@ class User_event : public Event<Event_manager> {
             this->get_event_manager().handled_user_event();
         }
 
-        virtual void automated_update_result() {
-            this->get_event_manager().get_result().increase_value(this->__class__(),
-                                                                  this->get_event_manager().get_result().get_general_key());
+        virtual void automated_update_result(typename Event_manager::result_t & result) {
+            result.increase_value(this->__class__(),
+                                  result.get_general_key());
         }
 
         virtual std::string const& __class__() const {
@@ -303,6 +356,10 @@ class User_event : public Event<Event_manager> {
 INSTANCIATE_USER_EVENT_NAME(User_event)
 
 
+/**
+ * \class Watcher_event
+ * \brief User event used to keep the simulation running until a given virtual time.
+ */
 template <class Event_manager>
 class Watcher_event : public User_event<Event_manager> {
     public:
@@ -323,6 +380,10 @@ class Watcher_event : public User_event<Event_manager> {
 INSTANCIATE_USER_EVENT_NAME(Watcher_event)
 
 
+/**
+ * \class Arrival_burst_event
+ * \brief User event used to trigger a change on the arrival rate of a specific node.
+ */
 template <class Event_manager>
 class Arrival_burst_event : public User_event<Event_manager> {
     typedef typename Event_manager::rate_t rate_t;
@@ -348,6 +409,10 @@ class Arrival_burst_event : public User_event<Event_manager> {
 INSTANCIATE_USER_EVENT_NAME(Arrival_burst_event)
 
 
+/**
+ * \class User_event_analyzer
+ * \brief Class analizing the event descriptions and instaciating objects accordingly.
+ */
 template<class Event_manager>
 class User_event_analyzer {
     public:
@@ -360,6 +425,10 @@ class User_event_analyzer {
         User_event_analyzer(Event_manager &event_manager) : event_manager_(event_manager) {
         }
 
+        /**
+         * \brief analyzes the event_description and tries to add a corresponding event to the Event_manager.
+         * \param event_description Description of the event to be added.
+         */
         void analyze(event_description_t const& event_description) {
             static description_key_t trigger_type_s("trigger_type"); 
             try {
@@ -376,6 +445,7 @@ class User_event_analyzer {
             }
         }
 
+    private:
         void analyze_time_event(event_description_t const& event_description) {
             static description_key_t trigger_value_s("trigger_value"),
                                      event_target_s("event_target"),
@@ -415,7 +485,6 @@ class User_event_analyzer {
             }
         }
 
-    private:
         Event_manager &event_manager_;
 };
 
