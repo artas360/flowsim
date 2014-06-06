@@ -70,7 +70,7 @@ class Event_manager {
          */
         template <typename event_type_t, typename... Args>
         //void add_event(typename event_type_t::event_issuer_t const& event_issuer, Args... param) {
-        void add_event(Args... param) {
+        void add_event(Args&&... param) {
              event_list_.emplace(allocator_.construct<event_t, event_type_t>(*this, param...));
         }
 

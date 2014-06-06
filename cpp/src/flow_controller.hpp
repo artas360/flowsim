@@ -9,6 +9,10 @@
 #include "key_generator.hpp"
 
 
+/**
+ * \class Flow_controller
+ * \brief Class allocating, destroying and keeping track of flows.
+ */
 template <class Topology, class flow_t, class key_t=size_t, class Flow_container = std::unordered_map<key_t, flow_t>, class Key_generator=Key_generator<key_t>>
 class Flow_controller {
     public:
@@ -23,6 +27,13 @@ class Flow_controller {
                                              key_gen_() {
         }
 
+        /**
+         * \brief Creates flow and tries to allocate ressources on the topology.
+         * \param src Key of the source node of the flow.
+         * \param dst Key of the target node of the flow.
+         * \return the flow key if the allocation was successfull,
+         * else an invalid key.
+         */
         virtual key_t allocate_flow(node_key_t const& src, node_key_t const& dst) {
             // Adding flow to container
             key_t flow_key(key_gen_());
@@ -66,6 +77,11 @@ class Flow_controller {
             }
         }
 
+        /**
+         * \brief Deallocates the given flow, and frees the alloacted ressources.
+         * \param flow_key Key of the flow to be free'd.
+         * \warning Throws if the flow key is not registered in the Flow_manager.
+         */
         virtual void free_flow(key_t flow_key) {
             assert(Key_generator::is_valid_key(flow_key));
             typename Flow_container::iterator iter(flows_.find(flow_key));

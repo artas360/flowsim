@@ -12,33 +12,41 @@
 
 #include "include.hpp"
 
+
+/**
+ * \struct custom_reference
+ * \brief Default constructible std::reference_wrapper.
+ * \note Shouldn't be used, but no better solution so far.
+ */
 template<class T>
 struct custom_reference {
     typedef T type;
     custom_reference() : pointer_(nullptr), is_valid_(false) {}
+
     custom_reference(T & target) : pointer_(&target), is_valid_(true) {}
+
     custom_reference(T && target) = delete;
-    custom_reference(custom_reference<T> const& other) : pointer_(other.pointer_), is_valid_(other.is_valid_) {}
-    T& operator()() {
-        if(is_valid_)
-            return *pointer_;
-        throw std::runtime_error("Call to non init custom_reference");
-    }
+
+    custom_reference(custom_reference const& other) : pointer_(other.pointer_),
+                                                      is_valid_(other.is_valid_) {}
+
     T const& operator()() const {
-        if(is_valid_)
-            return *pointer_;
-        throw std::runtime_error("Call to non init custom_reference");
+#if not NDEBUG
+        if(not is_valid_)
+            throw std::runtime_error("Call to non init custom_reference");
+#endif
+        return *pointer_;
     }
-    operator T() {
-        return (*this)();
-    }
+
     operator const T() const {
         return (*this)();
     }
+
     private:
-        T* pointer_;
+        const T* pointer_;
         bool is_valid_;
 };
+
 
 namespace boost{
     enum edge_obj1_t { edge_obj1 };
@@ -46,7 +54,10 @@ namespace boost{
     enum vertex_obj2_t { vertex_obj2 };
     BOOST_INSTALL_PROPERTY(vertex, obj2);
 }
-
+/**
+ * \class Topology
+ * \brief Wrapper around a boost graph
+ */
 template <class Node, class Edge>
 class Topology {
     typedef custom_reference<const typename Edge::weight_t> weight_ref_t;
@@ -75,7 +86,6 @@ class Topology {
         typedef Edge edge_t;
         typedef typename node_t::id_t id_t;
 
-    public:
         Topology() : g_() {
         }
 

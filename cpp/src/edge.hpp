@@ -35,28 +35,20 @@ class Edge : public Abstract_edge<flow_key_t, _weight, flow_container_t> {
         typedef _weight weight_t;
         typedef size_t capacity_t;
         typedef _infinity_wrapper infinity_wrapper_t;
-    private:
-        // Maximum number of flows going through the link.
-        size_t max_flows_;
 
-        // Available slots for flows.
-        size_t available_flows_;
-
-        // Weight and its backup. Backup is used when setting edge weight to infinity.
-        weight_t weight_, backup_weight_;
-
-        // Cointainer of the passing flows keys.
-        flow_container_t passing_flows_;
-
-        // Value to be set when no more flows can be allocated on this edge.
-        const weight_t infinite_weight_ = infinity_wrapper_t()();
-
-    public:
         /**
             \brief Copy constructor using operator= overload
          */
-        Edge(Edge const& edge) noexcept {
-            *this = edge;
+        Edge(Edge const& other) : max_flows_(other.max_flows_),
+                                 available_flows_(other.available_flows_),
+                                 weight_(other.weight_),
+                                 backup_weight_(other.backup_weight_),
+                                 passing_flows_(other.passing_flows_) {
+        }
+
+        Edge(Edge&& other) 
+                noexcept(noexcept(other.swap(other))) {
+            swap(other);
         }
 
         Edge(size_t capacity = 1, weight_t weight = 1) : max_flows_(capacity),
@@ -68,16 +60,24 @@ class Edge : public Abstract_edge<flow_key_t, _weight, flow_container_t> {
                 throw Edge_allocation_error();
         }
 
-        Edge& operator=(Edge const& other) {
-            if(this != &other) {
-                max_flows_ = other.max_flows_;
-                available_flows_ = other.available_flows_;
-                weight_ = other.weight_;
-                backup_weight_ = other.backup_weight_;
-                passing_flows_ = other.passing_flows_;
-            }
-
+        Edge& operator=(Edge other)
+                noexcept(noexcept(other.swap(other))) { // No fail!! because pass by copy!
+            swap(other);
             return *this;
+        }
+
+        void swap(Edge& other) 
+                noexcept(noexcept(std::swap(std::declval<weight_t &>(),
+                                            std::declval<weight_t &>())) &&
+                         noexcept(std::swap(std::declval<capacity_t &>(),
+                                            std::declval<capacity_t &>()))) {
+            using std::swap;
+
+            swap(weight_, other.weight_);
+            swap(max_flows_, other.max_flows_);
+            swap(backup_weight_, other.backup_weight_);
+            swap(passing_flows_, other.passing_flows_);
+            swap(available_flows_, other.available_flows_);
         }
 
         /**
@@ -124,6 +124,30 @@ class Edge : public Abstract_edge<flow_key_t, _weight, flow_container_t> {
         flow_container_t const& get_flows() const {
             return passing_flows_;
         }
+
+    private:
+        // Maximum number of flows going through the link.
+        size_t max_flows_;
+
+        // Available slots for flows.
+        size_t available_flows_;
+
+        // Weight and its backup. Backup is used when setting edge weight to infinity.
+        weight_t weight_, backup_weight_;
+
+        // Cointainer of the passing flows keys.
+        flow_container_t passing_flows_;
+
+        // Value to be set when no more flows can be allocated on this edge.
+        const weight_t infinite_weight_ = infinity_wrapper_t()();
 };
+
+
+template<class flow_key_t, class weight, class infinity_wrapper, class flow_container_t>
+void swap(Edge<flow_key_t, weight, infinity_wrapper, flow_container_t>& first, 
+          Edge<flow_key_t, weight, infinity_wrapper, flow_container_t>& second) 
+            noexcept(first.swap(second)) {
+    first.swap(second);
+}
 
 #endif

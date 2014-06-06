@@ -5,6 +5,10 @@
 
 #include "include.hpp"
 
+/**
+ * \class Flow
+ * \brief Class representing a flow.
+ */
 template <class edge_key_t, class container_t=std::vector<edge_key_t>>
 class Flow {
     public:

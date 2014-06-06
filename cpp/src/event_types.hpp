@@ -309,7 +309,7 @@ class Sample_event : public Event<Event_manager> {
         }
 
         virtual void automated_update_result(typename Event_manager::result_t & result) {
-            result.record_value(sample_target_, this->get_handling_time());
+            result.snapshot_value(sample_target_, this->get_handling_time());
         }
 
         virtual std::string const& __class__() const {

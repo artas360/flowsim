@@ -26,7 +26,7 @@ build:
 		@mkdir -p build
 		@mkdir -p bin
 
-flowsim: $(SOURCES)
+flowsim: $(SOURCES) $(HEADERS)
 
 .PHONY: tests clean valgrind
 tests:

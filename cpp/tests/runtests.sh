@@ -1,6 +1,6 @@
 echo "Running unit tests:"
 cd tests
-
+echo "" > ./tests.log
 for i in `ls .|grep -E "test_[A-Za-z0-9]"| grep --invert-match -E "*.cpp"`
 do
     if test -f $i
