@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
     char *tmpname = strdup("/tmp/flowsim.out.XXXXXX");
     mkstemp(tmpname);
     std::ofstream f(tmpname);
+    if(tmpname) free(tmpname);
 
     try {
         simulation_t simulation(argv[1]);
