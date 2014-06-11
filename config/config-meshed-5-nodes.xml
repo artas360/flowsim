@@ -9,7 +9,7 @@
 		<Event type="arrival_burst_event" event_target="1" trigger_type="time" trigger_value="19000" effect_value=".9"/>
 		<Event type="arrival_burst_event" event_target="4" trigger_type="time" trigger_value="19000" effect_value=".9"/>
 		<Event type="watcher_event" event_target="None" trigger_type="time" trigger_value="20000" effect_value="0"/>
-		<Event type="sample_event" event_target="0" trigger_type="time" trigger_value="0." effect_value="10"/>
+		<Event type="sample_event" event_target="Blocking_rate" trigger_type="time" trigger_value="0." effect_value="10"/>
 	</Events>
 	<Topology>
 		<Nodes>

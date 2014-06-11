@@ -108,31 +108,31 @@ class Result(object):
                 values.append(self.get(value_name, source_object))
         return process_function(values)
 
-    def take_snapshot(self, snapshot_key, store_snapshot=True,
-                      generaL_only=True):
-        assert(not snapshot_key in self.snapshots)
-        snapshot = dict()
-        if generaL_only:
-            keys = [self.general_key]
-        else:
-            keys = self.results.keys()
-        for source_object in keys:
-            snapshot[source_object] = dict()
-            for value_name in self.results[source_object]:
-                # Force necessary reevaluation of computed values
-                snapshot[source_object][value_name] =\
-                    self.get(value_name, source_object)
-        if store_snapshot:
-            self.snapshots[snapshot_key] = snapshot
-        return snapshot
+    def snapshot_value(self, value_name, time, node):
+        try:
+            self.snapshots[node][value_name].\
+                append((time, self.get(value_name, node)))
+        except KeyError:
+            if node not in self.snapshots:
+                self.snapshots[node] = {}
+            self.snapshots[node][value_name] =\
+                [(time, self.get(value_name, node))]
 
-    def get_snapshots(self):
-        return self.snapshots
+    def get_snapshots(self, value_name, node):
+        try:
+            return self.snapshots[node][value_name]
+        except KeyError:
+            raise KeyError("No such snapshot.")
 
     def get_results(self):
-        ret = {'latest': self.take_snapshot(None, False)}
-        ret.update(self.snapshots)
-        return ret
+        res = {}
+        for value_name in self.results[self.general_key]:
+            try:
+                res[value_name] =\
+                    self.snapshots[self.general_key][value_name][-1][1]
+            except KeyError:
+                res[value_name] = self.get(value_name, self.general_key)
+        return res
 
 
 def update_mean(submap, new_element, mean_key, denominator_key):

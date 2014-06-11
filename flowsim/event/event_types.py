@@ -139,11 +139,8 @@ class User_event_analyzer(object):
 
     def analyze_time_event(self, event_description):
         try:
+            target = event_description["event_target"]
             handling_time = float(event_description["trigger_value"])
-            try:
-                target = int(event_description["event_target"])
-            except ValueError:
-                target = None
             effect_value = float(event_description["effect_value"])
         except KeyError:
             raise KeyError("Illegal user event: missing field")
@@ -154,13 +151,14 @@ class User_event_analyzer(object):
             self.event_manager.add_event(Arrival_burst_event,
                                          "User",
                                          handling_time=handling_time,
-                                         target=target,
+                                         target=int(target),
                                          effect_value=effect_value)
         elif event_description["type"] == "sample_event":
             self.event_manager.add_event(Sample_event,
                                          "User",
                                          handling_time=handling_time,
-                                         time_interval=effect_value)
+                                         time_interval=effect_value,
+                                         target_value=target)
         elif event_description["type"] == "watcher_event":
             self.event_manager.add_event(Watcher_event,
                                          "User",
@@ -174,14 +172,18 @@ class Sample_event(Event):  # Should not be User_event or infinite loop
         super(self.__class__, self).__init__(event_manager, event_issuer)
         self.handling_time = kwargs.pop("handling_time")
         self.time_interval = kwargs.pop("time_interval")
+        self.target_value = kwargs.pop("target_value")
 
     def handle_event(self):
-        self.result.take_snapshot(self.handling_time, True)
+        self.result.snapshot_value(self.target_value,
+                                   self.handling_time,
+                                   self.result.general_key)
         self.event_manager.add_event(self.__class__,
                                      self.event_issuer,
                                      handling_time=(self.handling_time +
                                                     self.time_interval),
-                                     time_interval=self.time_interval)
+                                     time_interval=self.time_interval,
+                                     target_value=self.target_value)
 
 
 class User_event(Event):

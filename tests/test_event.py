@@ -107,7 +107,8 @@ class Test_Event_manager(TestCase):
         event_manager.add_event(Sample_event,
                                 "User",
                                 handling_time=0,
-                                time_interval=9)
+                                time_interval=9,
+                                target_value='Blocking_rate')
         event_count += 1
 
         event_manager.add_event(Watcher_event,
@@ -179,8 +180,11 @@ class Test_Event_manager(TestCase):
         event_manager.add_event(Sample_event,
                                 "User",
                                 handling_time=0,
-                                time_interval=9)
+                                time_interval=9,
+                                target_value='Blocking_rate')
 
         event_manager.handle_next_event()
         event_manager.handle_next_event()
-        self.assertTrue(event_manager.result.snapshots.keys() == [0, 9])
+        gen_key = event_manager.result.general_key
+        sshots = event_manager.result.get_snapshots('Blocking_rate', gen_key)
+        self.assertEqual(map(lambda x: x[0], sshots), [0, 9])
