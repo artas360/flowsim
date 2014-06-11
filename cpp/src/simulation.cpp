@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 
     // Event types
     typedef float time;
-    typedef Result<node_key_t, float, time> result_t;
+    typedef Result<node_key_t, float, time, size_t> result_t;
     typedef Event_manager<flow_controller_t, time, result_t> event_manager_t;
 
     // Simulation
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
         simulation_t simulation(argv[1]);
         result_t results = simulation.launch_simulation();
         std::cout << results << std::endl;
-        results.stream_samples(f, "Blocking_rate");
+        results.stream_samples(f, std::hash<std::string>()("Blocking_rate"));
     } catch(Configuration_error const& ce) {
         std::cerr << "Error parsing configuration file: " << argv[1] << std::endl;
         std::cerr << ce.what() << std::endl;

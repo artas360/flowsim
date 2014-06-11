@@ -68,8 +68,6 @@ class sample_container {
 /**
  * \class Result
  * \brief Provides mechanisms to store, update and output results.
- * \todo Change the hardcoded std::string type for value names to
- * template. std::string are too slow to hash!
  *
  * \warning result_value_t should be default constructed at 0.
  *
@@ -88,19 +86,21 @@ class sample_container {
 template <class holder_key_t,
           typename result_value_t=float,
           typename _time_t=float,
-          class result_container_t=std::unordered_map<holder_key_t, std::unordered_map<std::string, result_value_t>>,
+          typename value_name_t=std::string,
+          class result_container_t=std::unordered_map<holder_key_t, std::unordered_map<value_name_t, result_value_t>>,
           class sample_container_t=sample_container<result_value_t>>
 class Result {
 
     public:
         typedef result_value_t value_t;
+        typedef value_name_t name_t;
         typedef typename result_container_t::mapped_type submap_t;
-        typedef typename std::function<result_value_t(submap_t const&, result_value_t const&, std::string, std::string)> compute_function_t;
+        typedef typename std::function<result_value_t(submap_t const&, result_value_t const&, value_name_t const&, value_name_t const&)> compute_function_t;
         typedef typename std::function<result_value_t(submap_t const&, result_value_t const&)> binded_compute_function_t;
-        typedef std::unordered_map<std::string, std::tuple<bool, binded_compute_function_t, bool>> function_map_t;
-        typedef std::unordered_map<std::string, sample_container_t> convergence_map_t;
+        typedef std::unordered_map<value_name_t, std::tuple<bool, binded_compute_function_t, bool>> function_map_t;
+        typedef std::unordered_map<value_name_t, sample_container_t> convergence_map_t;
         typedef std::pair<_time_t, result_value_t> user_sample_t;
-        typedef std::unordered_map<std::string, std::vector<user_sample_t>> user_sample_container_t;
+        typedef std::unordered_map<value_name_t, std::vector<user_sample_t>> user_sample_container_t;
 
         Result() : results_() {
         }
@@ -112,7 +112,7 @@ class Result {
          * \param holder_key Key of the holder of the value to be updated.
          * \param increment Increment to be used.
          */
-        void increase_value(std::string const& value_name,
+        void increase_value(value_name_t const& value_name,
                             holder_key_t const& holder_key,
                             result_value_t const& increment = 1) {
             results_[holder_key][value_name] += increment;
@@ -125,7 +125,7 @@ class Result {
          * \param holder_key Key of the holder of the value to be updated.
          * \param value value to be recorded.
          */
-        void record_value(std::string const& value_name,
+        void record_value(value_name_t const& value_name,
                           holder_key_t const& holder_key,
                           result_value_t const& value) {
             results_[holder_key][value_name] = value;
@@ -143,7 +143,7 @@ class Result {
          * \param time Value to be associated with the snapshot.
          * \todo Allow snapshots of value not held by general_key.
          */
-        void snapshot_value(std::string const& value_name, _time_t const& time) {
+        void snapshot_value(value_name_t const& value_name, _time_t const& time) {
             user_sample_container_[value_name].emplace_back(time, get(general_key_, value_name));
         }
 
@@ -164,10 +164,10 @@ class Result {
          * the value and the keys key1 and key2 being stored in the class.
          */
         void add_computed_value(bool is_node_value,
-                                std::string const& value_name,
+                                value_name_t const& value_name,
                                 compute_function_t compute_function,
-                                std::string const& key1,
-                                std::string const& key2,
+                                value_name_t const& key1,
+                                value_name_t const& key2,
                                 bool update_on_get=false) {
             auto f = std::bind(compute_function, std::placeholders::_1, std::placeholders::_2, key1, key2);
             function_map_.emplace(value_name, std::make_tuple(is_node_value, f, update_on_get));
@@ -193,7 +193,7 @@ class Result {
          * \todo allow for values not belonging to general_key_ to
          * be registered.
          */
-        void register_convergence(std::string const& value_name,
+        void register_convergence(value_name_t const& value_name,
                                   float epsilon,
                                   size_t number_samples) {
 #ifdef __GNUC__
@@ -211,7 +211,7 @@ class Result {
          * convergence.
          * \return True if the value has converged, else false.
          */
-        bool check_convergence(std::string const& value_name) {
+        bool check_convergence(value_name_t const& value_name) {
             return check_convergence(value_name, this->get(general_key_, value_name));
         }
 
@@ -225,7 +225,7 @@ class Result {
          * \Warning Throws if value_name has not been registered
          * for convergence!
          */
-        bool check_convergence(std::string const& value_name, result_value_t const& new_sample) {
+        bool check_convergence(value_name_t const& value_name, result_value_t const& new_sample) {
             try {
                 convergence_map_.at(value_name).update_samples(new_sample);
                 return convergence_map_.at(value_name).has_converged();
@@ -252,8 +252,8 @@ class Result {
         template <template<class> class _container_t=std::vector>
         result_value_t process_nodes_value(submap_t const&,
                                            result_value_t const&,
-                                           std::string const& value_name,
-                                           std::string const&,
+                                           value_name_t const& value_name,
+                                           value_name_t const&,
                                            std::function<result_value_t(_container_t<result_value_t>&)> process_function) {
             std::vector<result_value_t> values;
             values.reserve(results_.size() - 1);
@@ -283,7 +283,7 @@ class Result {
          * \param holder_key Key of the holder of the value to be updated.
          * \return Value of value_name held by key.
          */
-        result_value_t const& get(holder_key_t const& holder_key, std::string const& value_name) {
+        result_value_t const& get(holder_key_t const& holder_key, value_name_t const& value_name) {
             // Will emplace new element if wrong key input
             if(function_map_.find(value_name) != function_map_.cend())
                 return get_computed_value(holder_key, value_name);
@@ -299,7 +299,7 @@ class Result {
          * The output will be:<BR>
          * time1 value1 time2 value2 ...
          */
-        std::ostream& stream_samples(std::ostream &out, std::string const& value_name) const {
+        std::ostream& stream_samples(std::ostream &out, value_name_t const& value_name) const {
             typename user_sample_container_t::const_iterator it(user_sample_container_.find(value_name));
 
             if(it != user_sample_container_.cend()) {
@@ -347,8 +347,8 @@ class Result {
          */
         static result_value_t event_division(submap_t const& submap,
                                              result_value_t const&,
-                                             std::string const& numerator_key,
-                                             std::string const& denominator_key) {
+                                             value_name_t const& numerator_key,
+                                             value_name_t const& denominator_key) {
             static_assert(std::numeric_limits<result_value_t>::has_quiet_NaN,
                           "Result::result_value_t doesn't have a quiet NaN");
             try {
@@ -369,8 +369,8 @@ class Result {
          */
         static result_value_t update_mean(submap_t const& submap,
                                           result_value_t const& new_element,
-                                          std::string const& mean_key,
-                                          std::string const& denominator_key) {
+                                          value_name_t const& mean_key,
+                                          value_name_t const& denominator_key) {
             try {
                 holder_key_t number_values = submap.at(denominator_key);
                 return ((submap.at(mean_key) * (number_values - 1)) + new_element) / number_values;
@@ -380,7 +380,7 @@ class Result {
         }
 
     private:
-        void update_computed_value(std::string const& value_key,
+        void update_computed_value(value_name_t const& value_key,
                                    holder_key_t const& holder_key,
                                    result_value_t const& new_element) {
             results_[holder_key][value_key] =
@@ -388,7 +388,7 @@ class Result {
         }
 
         result_value_t const& get_computed_value(holder_key_t const& holder_key,
-                                                 std::string const& value_key) {
+                                                 value_name_t const& value_key) {
             if(std::get<2>(function_map_[value_key]))
                 return (results_[holder_key][value_key]
                     = std::get<1>(function_map_[value_key])(results_[holder_key], 0));
@@ -405,8 +405,8 @@ class Result {
                                           std::numeric_limits<holder_key_t>::max();
 };
 
-template <class holder_key_t, typename result_value_t, class result_container_t>
-std::ostream& operator<<(std::ostream &out, Result<holder_key_t, result_value_t, result_container_t> & results) {
+template <class holder_key_t, typename result_value_t, class result_container_t, class value_name_t>
+std::ostream& operator<<(std::ostream &out, Result<holder_key_t, result_value_t, result_container_t, value_name_t> & results) {
     return results.stream_results(out);
 }
 

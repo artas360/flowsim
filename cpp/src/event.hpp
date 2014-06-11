@@ -28,7 +28,10 @@ struct event_comparison {
  * \class Event_manager
  * \brief Class recording, sorting and handling simulation events.
  */
-template <class Flow_controller, class time=float, class result=Result<float>>
+template <class Flow_controller,
+          class time=float,
+          class result=Result<float>,
+          class _name_hasher_t=std::hash<std::string>>
 class Event_manager {
     public:
         typedef time event_time_t;
@@ -40,6 +43,9 @@ class Event_manager {
         typedef typename node_t::rate_t rate_t;
         typedef Event<Event_manager<flow_controller_t, event_time_t, result_t>> event_t;
         typedef std::priority_queue<event_t*, std::vector<event_t*>, event_comparison<event_t, event_t>> event_queue;
+
+        typedef _name_hasher_t name_hasher_t;
+        typedef typename _name_hasher_t::result_type value_name_t;
 
         Event_manager(flow_controller_t & flow_controller) : allocator_(),
                                                              event_list_(),
@@ -80,7 +86,7 @@ class Event_manager {
         void start_event_processing() {
             bool has_converged = false;
             size_t counter = 0;
-            static const std::string block_rate("Blocking_rate");
+            static const value_name_t block_rate(hasher_("Blocking_rate"));
             init_run();
 
             while (not EOS_ and not (has_converged and remaining_user_events_ == 0)) {
@@ -214,7 +220,7 @@ class Event_manager {
 
     private:
         void handle_next_event(){
-            static const std::string time_elapsed("time_elapsed");
+            static const value_name_t time_elapsed(hasher_("time_elapsed"));
 
             if (event_list_.empty()) {
                 EOS_ = true;
@@ -249,13 +255,13 @@ class Event_manager {
             }
 
             result_.add_computed_value(false,
-                                       std::string("Blocking_rate"),
+                                       hasher_("Blocking_rate"),
                                        result_t::event_division,
-                                       std::string("Flow_allocation_failure_event"),
-                                       std::string("Arrival_event"),
+                                       hasher_("Flow_allocation_failure_event"),
+                                       hasher_("Arrival_event"),
                                        true);
 
-            result_.register_convergence(std::string("Blocking_rate"),
+            result_.register_convergence(hasher_("Blocking_rate"),
                                          convergence_epsilon_,
                                          convergence_number_samples_);
 
@@ -280,6 +286,8 @@ class Event_manager {
         size_t convergence_check_interval_;
         size_t convergence_number_samples_;
         typename result_t::value_t convergence_epsilon_;
+
+        _name_hasher_t hasher_;
 };
 
 #endif

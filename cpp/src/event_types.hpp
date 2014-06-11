@@ -9,9 +9,9 @@
 
 // Macro used to generate the __class__ methods in class inheriting Event.
 #define INSTANCIATE_EVENT_CLASS_NAME(X) template<class Event_manager, class Event_issuer>\
-                                  const std::string X<Event_manager, Event_issuer>::__name__(#X);
+                                  const typename Event_manager::value_name_t X<Event_manager, Event_issuer>::__name__(typename Event_manager::name_hasher_t()(#X));
 #define INSTANCIATE_USER_EVENT_NAME(X) template<class Event_manager>\
-                                  const std::string X<Event_manager>::__name__(#X);
+                                  const typename Event_manager::value_name_t X<Event_manager>::__name__(typename Event_manager::name_hasher_t()(#X));
 
 /**
  * \class Event
@@ -21,6 +21,7 @@ template <class Event_manager>
 class Event {
     public:
         typedef typename Event_manager::event_time_t event_time_t;
+        typedef typename Event_manager::value_name_t value_name_t;
 
         // Usefull for construction?
         Event(Event_manager &event_manager, event_time_t end_event_time, event_time_t handling_time) : event_manager_(event_manager), end_event_time_(end_event_time), handling_time_(handling_time) {}
@@ -65,7 +66,7 @@ class Event {
          * \brief returns the name of the last inherited class of the object.
          * \return A std:string description of the class name.
          */
-        virtual std::string const& __class__() const = 0;
+        virtual value_name_t const& __class__() const = 0;
 
     protected:
 
@@ -97,6 +98,7 @@ class Specialized_event : public Event<Event_manager>{
     public:
         typedef typename std::remove_reference<Event_issuer>::type event_issuer_t;
         typedef typename Event<Event_manager>::event_time_t event_time_t;
+        typedef typename Event_manager::value_name_t value_name_t;
 
         Specialized_event(Event_manager &event_manager, Event_issuer const& event_issuer, event_time_t end_event_time, event_time_t handling_time) : Event<Event_manager>(event_manager, end_event_time, handling_time), event_issuer_(event_issuer) {
         }
@@ -118,14 +120,14 @@ class Specialized_event : public Event<Event_manager>{
             return event_issuer_;
         }
 
-        virtual std::string const& __class__() const {
+        virtual value_name_t const& __class__() const {
             return __name__;
         }
 
     private:
         // Not ref for storing std::pair
         const event_issuer_t event_issuer_;
-        static const std::string __name__; 
+        static const value_name_t __name__; 
 };
 INSTANCIATE_EVENT_CLASS_NAME(Specialized_event)
 
@@ -137,6 +139,7 @@ template <class Event_manager, class Event_issuer>
 class End_flow_event : public Specialized_event<Event_manager, Event_issuer> {
     typedef typename Event_manager::flow_key_t flow_t;
     typedef typename Event_manager::flow_controller_t flow_controller_t;
+    typedef typename Event_manager::value_name_t value_name_t;
 
     public:
         typedef typename Event<Event_manager>::event_time_t event_time_t;
@@ -147,13 +150,13 @@ class End_flow_event : public Specialized_event<Event_manager, Event_issuer> {
             this->get_event_manager().get_flow_controller().free_flow(flow_);
         }
 
-        std::string const& __class__() const {
+        value_name_t const& __class__() const {
             return __name__;
         }
 
     private:
         flow_t flow_;
-        static const std::string __name__;
+        static const value_name_t __name__;
 };
 INSTANCIATE_EVENT_CLASS_NAME(End_flow_event)
 
@@ -164,6 +167,7 @@ INSTANCIATE_EVENT_CLASS_NAME(End_flow_event)
  */
 template <class Event_manager, class Event_issuer>
 class End_of_simulation_event : public Specialized_event<Event_manager, Event_issuer> {
+    typedef typename Event_manager::value_name_t value_name_t;
     public:
         typedef typename Event<Event_manager>::event_time_t event_time_t;
 
@@ -174,12 +178,12 @@ class End_of_simulation_event : public Specialized_event<Event_manager, Event_is
             this->get_event_manager().set_EOS();
         }
 
-        std::string const& __class__() const {
+        value_name_t const& __class__() const {
             return __name__;
         }
 
     private:
-        static const std::string __name__;
+        static const value_name_t __name__;
 };
 INSTANCIATE_EVENT_CLASS_NAME(End_of_simulation_event)
 
@@ -190,6 +194,7 @@ INSTANCIATE_EVENT_CLASS_NAME(End_of_simulation_event)
  */
 template <class Event_manager, class Event_issuer>
 class Flow_allocation_success_event: public Specialized_event<Event_manager, Event_issuer> {
+    typedef typename Event_manager::value_name_t value_name_t;
     public:
         typedef typename Event_manager::flow_key_t flow_t;
 
@@ -207,13 +212,13 @@ class Flow_allocation_success_event: public Specialized_event<Event_manager, Eve
             #endif
         }
 
-        std::string const& __class__() const {
+        value_name_t const& __class__() const {
             return __name__;
         }
 
     private:
         flow_t flow_;
-        static const std::string __name__;
+        static const value_name_t __name__;
 };
 INSTANCIATE_EVENT_CLASS_NAME(Flow_allocation_success_event)
 
@@ -224,6 +229,7 @@ INSTANCIATE_EVENT_CLASS_NAME(Flow_allocation_success_event)
  */
 template <class Event_manager, class Event_issuer>
 class Flow_allocation_failure_event: public Specialized_event<Event_manager, Event_issuer> {
+    typedef typename Event_manager::value_name_t value_name_t;
     public:
         Flow_allocation_failure_event(Event_manager &event_manager, Event_issuer const& event_issuer) : Specialized_event<Event_manager, Event_issuer>(event_manager, event_issuer, 0, event_manager.get_immediate_handling()) {
         }
@@ -231,12 +237,12 @@ class Flow_allocation_failure_event: public Specialized_event<Event_manager, Eve
         void handle_event() {
         }
 
-        std::string const& __class__() const {
+        value_name_t const& __class__() const {
             return __name__;
         }
 
     private:
-        static const std::string __name__;
+        static const value_name_t __name__;
 };
 INSTANCIATE_EVENT_CLASS_NAME(Flow_allocation_failure_event)
 
@@ -247,6 +253,7 @@ INSTANCIATE_EVENT_CLASS_NAME(Flow_allocation_failure_event)
  */
 template <class Event_manager, class Event_issuer>
 class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
+    typedef typename Event_manager::value_name_t value_name_t;
     typedef typename Event_manager::flow_key_t flow_t;
 
     public:
@@ -278,14 +285,14 @@ class Arrival_event : public Specialized_event<Event_manager, Event_issuer> {
             }
         }
 
-        std::string const& __class__() const {
+        value_name_t const& __class__() const {
             return __name__;
         }
 
     private:
         float arrival_rate_;
         float service_rate_;
-        static const std::string __name__;
+        static const value_name_t __name__;
 };
 INSTANCIATE_EVENT_CLASS_NAME(Arrival_event)
 
@@ -298,8 +305,9 @@ INSTANCIATE_EVENT_CLASS_NAME(Arrival_event)
 template <class Event_manager>
 class Sample_event : public Event<Event_manager> {
     typedef typename Event<Event_manager>::event_time_t event_time_t;
+    typedef typename Event_manager::value_name_t value_name_t;
     public:
-        Sample_event(Event_manager &event_manager, event_time_t time_interval, event_time_t handling_time, std::string const& sample_target) : Event<Event_manager>(event_manager, time_interval, handling_time), sample_target_(sample_target) {
+        Sample_event(Event_manager &event_manager, event_time_t time_interval, event_time_t handling_time, value_name_t const& sample_target) : Event<Event_manager>(event_manager, time_interval, handling_time), sample_target_(sample_target) {
         }
 
         void handle_event() {
@@ -312,13 +320,13 @@ class Sample_event : public Event<Event_manager> {
             result.snapshot_value(sample_target_, this->get_handling_time());
         }
 
-        virtual std::string const& __class__() const {
+        virtual value_name_t const& __class__() const {
             return __name__;
         }
 
     private:
-        static const std::string __name__;
-        const std::string sample_target_;
+        static const value_name_t __name__;
+        const value_name_t sample_target_;
 };
 INSTANCIATE_USER_EVENT_NAME(Sample_event)
 
@@ -329,6 +337,7 @@ INSTANCIATE_USER_EVENT_NAME(Sample_event)
  */
 template <class Event_manager>
 class User_event : public Event<Event_manager> {
+    typedef typename Event_manager::value_name_t value_name_t;
     public:
         typedef typename Event<Event_manager>::event_time_t event_time_t;
 
@@ -346,12 +355,12 @@ class User_event : public Event<Event_manager> {
                                   result.get_general_key());
         }
 
-        virtual std::string const& __class__() const {
+        virtual value_name_t const& __class__() const {
             return __name__;
         }
 
     private:
-        static const std::string __name__;
+        static const value_name_t __name__;
 };
 INSTANCIATE_USER_EVENT_NAME(User_event)
 
@@ -362,6 +371,7 @@ INSTANCIATE_USER_EVENT_NAME(User_event)
  */
 template <class Event_manager>
 class Watcher_event : public User_event<Event_manager> {
+    typedef typename Event_manager::value_name_t value_name_t;
     public:
         typedef typename User_event<Event_manager>::event_time_t event_time_t;
         Watcher_event(Event_manager &event_manager, event_time_t handling_time) : User_event<Event_manager>(event_manager, 0, handling_time) {
@@ -370,12 +380,12 @@ class Watcher_event : public User_event<Event_manager> {
         void handle_event() {
         }
 
-        virtual std::string const& __class__() const {
+        virtual value_name_t const& __class__() const {
             return __name__;
         }
 
     private:
-        static const std::string __name__;
+        static const value_name_t __name__;
 };
 INSTANCIATE_USER_EVENT_NAME(Watcher_event)
 
@@ -388,6 +398,7 @@ template <class Event_manager>
 class Arrival_burst_event : public User_event<Event_manager> {
     typedef typename Event_manager::rate_t rate_t;
     typedef typename Event_manager::node_t::id_t node_id_t;
+    typedef typename Event_manager::value_name_t value_name_t;
     public:
         typedef typename User_event<Event_manager>::event_time_t event_time_t;
         Arrival_burst_event(Event_manager &event_manager, event_time_t handling_time, node_id_t target, rate_t new_arrival_rate) : User_event<Event_manager>(event_manager, 0, handling_time), target_(target), new_arrival_rate_(new_arrival_rate) {
@@ -397,14 +408,14 @@ class Arrival_burst_event : public User_event<Event_manager> {
             this->get_event_manager().get_flow_controller().get_topology().swap_node_arr_rate(target_, new_arrival_rate_);
         }
 
-        virtual std::string const& __class__() const {
+        virtual value_name_t const& __class__() const {
             return __name__;
         }
 
     private:
         node_id_t target_;
         rate_t new_arrival_rate_;
-        static const std::string __name__;
+        static const value_name_t __name__;
 };
 INSTANCIATE_USER_EVENT_NAME(Arrival_burst_event)
 
@@ -415,6 +426,7 @@ INSTANCIATE_USER_EVENT_NAME(Arrival_burst_event)
  */
 template<class Event_manager>
 class User_event_analyzer {
+    typedef typename Event_manager::value_name_t value_name_t;
     public:
         typedef typename config_list::value_type event_description_t;
         typedef typename event_description_t::key_type description_key_t;
@@ -455,9 +467,7 @@ class User_event_analyzer {
             event_time_t handling_time;
             // float most generic?
             float effect_value;
-            // Only node target ???
             description_value_t event_target;
-            std::string tmp;
             try {
                 type = boost::lexical_cast<std::string, description_value_t>(event_description.at(type_s));
                 handling_time = boost::lexical_cast<event_time_t, description_value_t>(event_description.at(trigger_value_s));
@@ -470,9 +480,10 @@ class User_event_analyzer {
                                                                                           event_manager_.get_flow_controller().get_topology().id_to_key(target_node),
                                                                                           effect_value);
                 } else if(type == std::string("sample_event")) {
+                    value_name_t target_value = typename Event_manager::name_hasher_t()(event_target);
                     event_manager_.template add_event<Sample_event<Event_manager>>(effect_value,
                                                                                    handling_time,
-                                                                                   event_target);
+                                                                                   target_value);
                 } else if(type == std::string("watcher_event")) {
                     event_manager_.template add_event<Watcher_event<Event_manager>>(handling_time);
                 } else {
